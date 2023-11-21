@@ -6,13 +6,13 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 
-namespace EasyLog.Components
+namespace EasyLog.Trackers
 {
-    [AddComponentMenu("EasyLog/Simple Tracker")]
-    public class SimpleTracker : MonoBehaviour
+    [AddComponentMenu("EasyLog/Manual Tracker")]
+    public class ManualTracker : MonoBehaviour
     {
-        private static SimpleTracker _current;
-        public static SimpleTracker Current => _current;
+        private static ManualTracker _current;
+        public static ManualTracker Current => _current;
 
         public enum TrackOption { Interval, Event }
         [HideInInspector] public string filePrefix = "Log";
