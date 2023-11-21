@@ -68,7 +68,7 @@ namespace EasyLog.Trackers
         /// </summary>
         /// <param name="propertyAccessor">The property to track, has to be handed over as a Func: "() => property".</param>
         /// <param name="propertyName">The name the property will be saved under.</param>
-        public void TrackNewProperty(Func<object> propertyAccessor, string propertyName)
+        public void AddNewProperty(Func<object> propertyAccessor, string propertyName)
         {
             if (_hasBeenStarted)
             {
