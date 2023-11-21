@@ -27,7 +27,7 @@ namespace EasyLog.Editor
                 {
                     if (tracker is IntervalTracker)
                         tracker.fileSuffix = "Interval";
-                    else
+                    if (tracker is ManualTracker)
                         tracker.fileSuffix = "Manual";
                 }
                 

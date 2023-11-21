@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using EasyLog.Core;
 using EasyLog.Trackers;
 using UnityEditor;
 using UnityEngine;
@@ -9,13 +10,11 @@ namespace EasyLog.Editor
     [CustomEditor(typeof(IntervalTracker))]
     public class IntervalTrackerEditor : UnityEditor.Editor
     {
-        private bool _showFileSettings = true;
         private bool _showAdvancedFileOptions;
         private bool _showLogSettings = true;
-        private bool _showTrackedProperties = true;
 
-        private PropertySelectionEditor _propertySelection = new();
-        private FileSettingsEditor _fileSettings = new();
+        private readonly PropertySelectionEditor _propertySelection = new();
+        private readonly FileSettingsEditor _fileSettings = new();
         
         public override void OnInspectorGUI()
         {
@@ -47,12 +46,12 @@ namespace EasyLog.Editor
                 intervalTracker.logInterval = EditorGUILayout.IntSlider(
                     logIntervalLabel, intervalTracker.logInterval, 1, 60);
                 
-                var timeOptions = Enum.GetValues(typeof(IntervalTracker.TimeScaleOption)).Cast<IntervalTracker.TimeScaleOption>().ToArray();
+                var timeOptions = Enum.GetValues(typeof(Tracker.TimeScaleOption)).Cast<Tracker.TimeScaleOption>().ToArray();
                 int timeOption = EditorGUILayout.Popup(
-                    new GUIContent("Time Scale"),
+                    new GUIContent("Time Scale", "The time scale used for logging and timestamps."),
                     (int)intervalTracker.timeScaleOption,
                     timeOptions.Select(e => e.ToString()).ToArray());
-                intervalTracker.timeScaleOption = (IntervalTracker.TimeScaleOption)timeOption;
+                intervalTracker.timeScaleOption = (Tracker.TimeScaleOption)timeOption;
 
                 intervalTracker.startAutomatically = EditorGUILayout.Toggle(
                     new GUIContent("Start Automatically", 

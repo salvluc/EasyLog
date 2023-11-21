@@ -35,6 +35,8 @@ namespace EasyLog.Trackers
 
         private void Start()
         {
+            Initialize();
+            
             _isPaused = !startAutomatically;
 
             _delayBetweenLogs = DelayBetweenLogs();
@@ -104,12 +106,6 @@ namespace EasyLog.Trackers
                     yield return new WaitForSecondsRealtime(_delayBetweenLogs);
             }
         }
-        
-
-
-
-
-        
 
         private void OnApplicationQuit()
         {

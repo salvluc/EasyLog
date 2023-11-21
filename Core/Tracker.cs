@@ -23,7 +23,7 @@ namespace EasyLog.Core
         
         private string _filePath;
         
-        private void Start()
+        protected void Initialize()
         {
             // format current date and time
             string dateTimeFormat = "dd-MM-yyyy_HH-mm";
