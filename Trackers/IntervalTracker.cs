@@ -31,16 +31,21 @@ namespace EasyLog.Trackers
                 Debug.LogWarning("EasyLog: Multiple Interval Trackers found! Make sure to only use one tracker of each type! Now removing excess trackers...");
                 Destroy(this);
             }
+            
+            Initialize();
         }
 
-        private void Start()
+        protected override void Initialize()
         {
-            Initialize();
+            base.Initialize();
             
             _isPaused = !startAutomatically;
 
             _delayBetweenLogs = DelayBetweenLogs();
+        }
 
+        private void Start()
+        {
             StartCoroutine(InitializeLogging());
         }
 
@@ -48,14 +53,13 @@ namespace EasyLog.Trackers
         {
             // wait to ensure all code-based variables are registered
             yield return new WaitForSeconds(0.1f);
-
-            _hasBeenStarted = true;
-
-            WriteHeaders();
-
-            yield return null;
             
-            StartCoroutine(TrackByInterval());
+            WriteHeaders();
+            
+            _hasBeenStarted = true;
+            
+            if (startAutomatically)
+                StartCoroutine(TrackByInterval());
         }
 
         private float DelayBetweenLogs()
@@ -70,6 +74,12 @@ namespace EasyLog.Trackers
         /// <param name="propertyName">The name the property will be saved under.</param>
         public void AddNewProperty(Func<object> propertyAccessor, string propertyName)
         {
+            if (!_initialized)
+            {
+                Debug.LogWarning("EasyLog: You can not add properties before Start()! Add properties in the Inspector or in Start()!");
+                return;
+            }
+            
             if (_hasBeenStarted)
             {
                 Debug.LogWarning("EasyLog: You can not add new properties during runtime! Add properties in the Inspector or in Start()!");

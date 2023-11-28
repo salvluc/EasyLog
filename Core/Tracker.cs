@@ -22,8 +22,10 @@ namespace EasyLog.Core
         protected Dictionary<string, Func<string>> _trackedPropertiesViaCode = new Dictionary<string, Func<string>>();
         
         private string _filePath;
-        
-        protected void Initialize()
+
+        protected bool _initialized;
+
+        protected virtual void Initialize()
         {
             // format current date and time
             string dateTimeFormat = "dd-MM-yyyy_HH-mm";
@@ -31,6 +33,8 @@ namespace EasyLog.Core
             string fileName = $"{filePrefix}_{formattedDateTime}_{fileSuffix}.csv";
 
             _filePath = Path.Combine(saveLocation, fileName);
+
+            _initialized = true;
         }
 
         protected void WriteHeaders()
