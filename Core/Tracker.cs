@@ -42,7 +42,7 @@ namespace EasyLog.Core
             // add headers from inspector-based properties
             foreach (var trackedVar in trackedPropertiesViaEditor)
             {
-                headers.Add(trackedVar.component.gameObject.name + " " + trackedVar.component.name + " " + trackedVar.propertyName);
+                headers.Add(trackedVar.component.gameObject.name + " " + trackedVar.component.GetType().Name + " " + trackedVar.propertyName);
             }
 
             // add headers from code-based properties
