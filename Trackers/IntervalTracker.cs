@@ -1,26 +1,19 @@
 using System;
-using System.Collections;
+using System.Collections.Generic;
+using EasyLog.Core;
 using UnityEngine;
 
 namespace EasyLog.Trackers
 {
     [AddComponentMenu("EasyLog/Interval Tracker")]
-    public class IntervalTracker : Core.Tracker
+    public class IntervalTracker : Tracker
     {
         public static IntervalTracker Current => _current;
         private static IntervalTracker _current;
-
-        public enum IntervalOption { Seconds, PerSecond }
         
-        [HideInInspector] public IntervalOption intervalOption = IntervalOption.Seconds;
-        [HideInInspector] public int logInterval = 1;
-
-        [HideInInspector] public bool startAutomatically = true;
-        private static bool _isPaused = false;
-        private float _delayBetweenLogs;
+        [HideInInspector] public IntervalChannel _standardChannel = new ();
+        [HideInInspector] public List<IntervalChannel> channels = new();
         
-        private static bool _hasBeenStarted;
-
         private void Awake()
         {
             if (_current == null)
@@ -35,86 +28,32 @@ namespace EasyLog.Trackers
             Initialize();
         }
 
+        public void Start()
+        {
+            foreach (IntervalChannel channel in channels)
+            {
+                StartCoroutine(channel.InitializeLogging());
+            }
+        }
+
         protected override void Initialize()
         {
             base.Initialize();
             
-            _isPaused = !startAutomatically;
+            channels.Add(_standardChannel);
 
-            _delayBetweenLogs = DelayBetweenLogs();
-        }
-
-        private void Start()
-        {
-            StartCoroutine(InitializeLogging());
-        }
-
-        private IEnumerator InitializeLogging()
-        {
-            // wait to ensure all code-based variables are registered
-            yield return new WaitForSeconds(0.1f);
-            
-            WriteHeaders();
-            
-            _hasBeenStarted = true;
-            
-            if (startAutomatically)
-                StartCoroutine(TrackByInterval());
-        }
-
-        private float DelayBetweenLogs()
-        {
-            return intervalOption == IntervalOption.Seconds ? logInterval : 1f / logInterval;
-        }
-
-        /// <summary>
-        /// Starts tracking the specified property in a new column.
-        /// </summary>
-        /// <param name="propertyAccessor">The property to track, has to be handed over as a Func: "() => property".</param>
-        /// <param name="propertyName">The name the property will be saved under.</param>
-        public void AddNewProperty(Func<object> propertyAccessor, string propertyName)
-        {
-            if (!_initialized)
+            foreach (IntervalChannel channel in channels)
             {
-                Debug.LogWarning("EasyLog: You can not add properties before Start()! Add properties in the Inspector or in Start()!");
-                return;
+                channel.Initialize();
             }
-            
-            if (_hasBeenStarted)
-            {
-                Debug.LogWarning("EasyLog: You can not add new properties during runtime! Add properties in the Inspector or in Start()!");
-                return;
-            }
-            
-            if (_trackedPropertiesViaCode.ContainsKey(propertyName))
-                Debug.LogWarning("EasyLog: Cannot add \"" + propertyName + "\" because a property with the same name is already being tracked.");
-            else
-                _trackedPropertiesViaCode[propertyName] = () => Convert.ToString(propertyAccessor());
-        }
-
-        public static void Pause()
-        {
-            _isPaused = true;
         }
         
-        public static void Unpause()
+        public IntervalChannel GetChannel(int channelIndex = 0)
         {
-            _isPaused = false;
-        }
-
-        private IEnumerator TrackByInterval()
-        {
-            while (true)
-            {
-                yield return new WaitUntil(() => !_isPaused);
-                
-                WriteValues();
-                
-                if (timeScaleOption == TimeScaleOption.Scaled)
-                    yield return new WaitForSeconds(_delayBetweenLogs);
-                else
-                    yield return new WaitForSecondsRealtime(_delayBetweenLogs);
-            }
+            if (channels.Count == 0 || channelIndex == 0)
+                return _standardChannel;
+            
+            return channels[channelIndex];
         }
 
         private void OnApplicationQuit()

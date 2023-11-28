@@ -1,5 +1,4 @@
-using System;
-using System.Collections;
+using System.Collections.Generic;
 using EasyLog.Core;
 using UnityEngine;
 
@@ -10,11 +9,10 @@ namespace EasyLog.Trackers
     {
         public static ManualTracker Current => _current;
         private static ManualTracker _current;
-
-        [HideInInspector] public bool logOnStart;
-
-        private static bool _hasBeenStarted;
-
+        
+        private static ManualChannel _standardChannel = new ();
+        [HideInInspector] public List<ManualChannel> channels = new() { _standardChannel };
+        
         private void Awake()
         {
             if (_current == null)
@@ -25,65 +23,16 @@ namespace EasyLog.Trackers
                 Debug.LogWarning("EasyLog: Multiple Manual Trackers found! Make sure to only use one tracker of each type! Now removing excess trackers...");
                 Destroy(this);
             }
-            
+
             Initialize();
         }
-
-        private void Start()
-        {
-            StartCoroutine(InitializeLogging());
-        }
-
-        private IEnumerator InitializeLogging()
-        {
-            // wait to ensure all code-based variables are registered
-            yield return new WaitForSeconds(0.1f);
-
-            WriteHeaders();
-
-            _hasBeenStarted = true;
-            
-            if (logOnStart)
-                WriteValues();
-        }
-
-        /// <summary>
-        /// Starts tracking the specified property in a new column.
-        /// </summary>
-        /// <param name="propertyAccessor">The property to track, has to be handed over as a Func: "() => property".</param>
-        /// <param name="propertyName">The name the property will be saved under.</param>
-        public void AddNewProperty(Func<object> propertyAccessor, string propertyName)
-        {
-            if (!_initialized)
-            {
-                Debug.LogWarning("EasyLog: You can not add properties before Start()! Add properties in the Inspector or in Start()!");
-                return;
-            }
-            
-            if (_hasBeenStarted)
-            {
-                Debug.LogWarning("EasyLog: You can not add new properties during runtime! Add properties in the Inspector or in Start()!");
-                return;
-            }
-   
-            if (_trackedPropertiesViaCode.ContainsKey(propertyName))
-                Debug.LogWarning("EasyLog: Cannot add \"" + propertyName + "\" because a property with the same name is already being tracked.");
-            else
-                _trackedPropertiesViaCode[propertyName] = () => Convert.ToString(propertyAccessor());
-        }
         
-        /// <summary>
-        /// Logs the values of all tracked properties.
-        /// </summary>
-        public void LogAllTrackedProperties()
+        public ManualChannel GetChannel(int channelIndex = 0)
         {
-            if (!_initialized)
-            {
-                Debug.LogWarning("EasyLog: You can not log before Start()!");
-                return;
-            }
+            if (channels.Count == 0 || channelIndex == 0)
+                return _standardChannel;
             
-            WriteValues();
+            return channels[channelIndex];
         }
 
         private void OnApplicationQuit()
