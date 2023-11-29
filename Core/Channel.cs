@@ -7,15 +7,18 @@ using UnityEngine;
 
 namespace EasyLog.Core
 {
+    [Serializable]
     public class Channel
     {
-        [HideInInspector] public List<TrackedProperty> trackedPropertiesViaEditor = new();
-        private Dictionary<string, Func<string>> _trackedPropertiesViaCode = new();
+        [HideInInspector] public List<TrackedProperty> trackedPropertiesViaEditor = new List<TrackedProperty>();
+        private Dictionary<string, Func<string>> _trackedPropertiesViaCode = new Dictionary<string, Func<string>>();
         
         public enum TimeScaleOption { Scaled, Unscaled }
         [HideInInspector] public TimeScaleOption timeScaleOption = TimeScaleOption.Scaled;
 
         public Tracker ParentTracker;
+
+        public int ChannelIndex = 0;
         
         protected bool _initialized;
         
@@ -62,7 +65,7 @@ namespace EasyLog.Core
             headers.AddRange(_trackedPropertiesViaCode.Keys);
 
             string headerLine = string.Join(",", headers);
-            File.WriteAllText(ParentTracker._filePath, headerLine + Environment.NewLine);
+            File.WriteAllText(GetChannelFilePath(), headerLine + Environment.NewLine);
         }
         
         protected void WriteValues()
@@ -110,7 +113,7 @@ namespace EasyLog.Core
                 logLine.Length--;
 
             // write to .csv file
-            File.AppendAllText(ParentTracker._filePath, logLine + Environment.NewLine);
+            File.AppendAllText(GetChannelFilePath(), logLine + Environment.NewLine);
         }
         
         private string GetFormattedTime()
@@ -123,6 +126,11 @@ namespace EasyLog.Core
                 timeSpan.Milliseconds);
 
             return formattedTime;
+        }
+
+        private string GetChannelFilePath()
+        {
+            return $"{ParentTracker._filePath.Remove(ParentTracker._filePath.Length - 3)}_Channel{ChannelIndex}.csv";
         }
     }
 }

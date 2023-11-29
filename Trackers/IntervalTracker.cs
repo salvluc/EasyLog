@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using EasyLog.Core;
 using UnityEngine;
@@ -11,8 +10,8 @@ namespace EasyLog.Trackers
         public static IntervalTracker Current => _current;
         private static IntervalTracker _current;
         
-        [HideInInspector] public IntervalChannel _standardChannel = new ();
-        [HideInInspector] public List<IntervalChannel> channels = new();
+        [HideInInspector] public IntervalChannel _standardChannel = new IntervalChannel();
+        [HideInInspector] public List<IntervalChannel> channels = new List<IntervalChannel>();
         
         private void Awake()
         {
@@ -40,8 +39,6 @@ namespace EasyLog.Trackers
         {
             base.Initialize();
             
-            channels.Add(_standardChannel);
-
             foreach (IntervalChannel channel in channels)
             {
                 channel.Initialize();
@@ -50,10 +47,18 @@ namespace EasyLog.Trackers
         
         public IntervalChannel GetChannel(int channelIndex = 0)
         {
-            if (channels.Count == 0 || channelIndex == 0)
-                return _standardChannel;
+            if (channels.Count <= channelIndex)
+            {
+                Debug.LogError("This channel does not exist.");
+                return null;
+            }
             
             return channels[channelIndex];
+        }
+
+        public int ChannelCount()
+        {
+            return channels.Count;
         }
 
         private void OnApplicationQuit()

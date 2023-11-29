@@ -1,9 +1,11 @@
+using System;
 using System.Collections;
 using EasyLog.Trackers;
 using UnityEngine;
 
 namespace EasyLog.Core
 {
+    [Serializable]
     public class IntervalChannel : Channel
     {
         public enum IntervalOption { Seconds, PerSecond }

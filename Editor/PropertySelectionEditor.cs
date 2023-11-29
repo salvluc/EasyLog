@@ -1,21 +1,27 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using EasyLog.Core;
-using EasyLog.Trackers;
 using UnityEditor;
 using UnityEngine;
 
 namespace EasyLog.Editor
 {
+    [Serializable]
     public class PropertySelectionEditor
     {
-        private bool _showTrackedProperties = true;
+        private readonly Dictionary<IntervalChannel, bool> _trackedIntervalPropertiesFoldoutStates = new();
+        private readonly Dictionary<IntervalChannel, bool> _trackedManualPropertiesFoldoutStates = new();
+        
         public void DrawInterval(IntervalChannel channel)
         {
-            _showTrackedProperties = EditorGUILayout.Foldout(_showTrackedProperties, new GUIContent("Tracked Properties"), EditorStyles.foldoutHeader);
+            _trackedIntervalPropertiesFoldoutStates.TryAdd(channel, true); // Default state
+            
+            _trackedIntervalPropertiesFoldoutStates[channel] = EditorGUILayout.Foldout(
+                _trackedIntervalPropertiesFoldoutStates[channel], "Tracked Properties", EditorStyles.foldoutHeader);
 
-            if (_showTrackedProperties)
+            if (_trackedIntervalPropertiesFoldoutStates[channel])
             {
                 EditorGUI.indentLevel++;
                 
@@ -96,12 +102,13 @@ namespace EasyLog.Editor
                 EditorGUI.indentLevel--;
             }
         }
-        
+        /*
         public void DrawManual(ManualTracker tracker)
         {
-            _showTrackedProperties = EditorGUILayout.Foldout(_showTrackedProperties, new GUIContent("Tracked Properties"), EditorStyles.foldoutHeader);
+            _trackedIntervalPropertiesFoldoutStates[channel] = EditorGUILayout.Foldout(
+                _trackedIntervalPropertiesFoldoutStates[channel], "Tracked Properties", EditorStyles.foldoutHeader);
 
-            if (_showTrackedProperties)
+            if (_trackedIntervalPropertiesFoldoutStates[channel])
             {
                 EditorGUI.indentLevel++;
                 
@@ -181,6 +188,6 @@ namespace EasyLog.Editor
 
                 EditorGUI.indentLevel--;
             }
-        }
+        }*/
     }
 }

@@ -37,7 +37,7 @@ namespace EasyLog.Editor
 
             EditorGUILayout.Space();
             
-            _propertySelection.DrawManual((ManualTracker)manualChannel.ParentTracker);
+            //_propertySelection.DrawManual((ManualTracker)manualChannel.ParentTracker);
         }
     }
 }

@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace EasyLog.Editor
 {
+    [Serializable]
     public class TrackerSettingsEditor
     {
         private bool _showSettings = true;

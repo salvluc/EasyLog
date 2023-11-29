@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using EasyLog.Core;
 using UnityEditor;
@@ -6,16 +7,35 @@ using UnityEngine;
 
 namespace EasyLog.Editor
 {
+    [Serializable]
     public class IntervalChannelEditor
     {
-        private bool _showLogSettings = true;
+        private readonly Dictionary<IntervalChannel, bool> _channelFoldoutStates = new();
+        private readonly Dictionary<IntervalChannel, bool> _logSettingsFoldoutStates = new();
         private readonly PropertySelectionEditor _propertySelection = new();
 
         public void Draw(IntervalChannel intervalChannel)
         {
-            _showLogSettings = EditorGUILayout.Foldout(_showLogSettings, new GUIContent("Log Settings"), EditorStyles.foldoutHeader);
+            _channelFoldoutStates.TryAdd(intervalChannel, true); // Default state
 
-            if (_showLogSettings)
+            _logSettingsFoldoutStates.TryAdd(intervalChannel, true); // Default state
+
+            _channelFoldoutStates[intervalChannel] = EditorGUILayout.Foldout(
+                _channelFoldoutStates[intervalChannel], 
+                "Channel " + intervalChannel.ChannelIndex, 
+                EditorStyles.foldoutHeader);
+
+            if (!_channelFoldoutStates[intervalChannel])
+                return;
+            
+            EditorGUI.indentLevel++;
+            
+            _logSettingsFoldoutStates[intervalChannel] = EditorGUILayout.Foldout(
+                _logSettingsFoldoutStates[intervalChannel], 
+                "Log Settings", 
+                EditorStyles.foldoutHeader);
+
+            if (_logSettingsFoldoutStates[intervalChannel])
             {
                 EditorGUI.indentLevel++;
                 
@@ -55,6 +75,7 @@ namespace EasyLog.Editor
             
             _propertySelection.DrawInterval(intervalChannel);
             
+            EditorGUI.indentLevel--;
         }
     }
 }
