@@ -79,7 +79,7 @@ namespace EasyLog.Trackers
         
         private void OnApplicationQuit()
         {
-            Debug.Log("EasyLog: Successfully saved log(s) at: " + saveLocation);
+            Debug.Log("Manual Tracker: Successfully saved log(s) at: " + saveLocation);
         }
     }
 }

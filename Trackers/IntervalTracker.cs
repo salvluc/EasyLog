@@ -78,7 +78,7 @@ namespace EasyLog.Trackers
 
         private void OnApplicationQuit()
         {
-            Debug.Log("EasyLog: Successfully saved log(s) at: " + saveLocation);
+            Debug.Log("Interval Tracker: Successfully saved log(s) at: " + saveLocation);
         }
     }
 }
