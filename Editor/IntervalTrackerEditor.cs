@@ -29,37 +29,55 @@ namespace EasyLog.Editor
             
             EditorGUILayout.Space();
 
-            for (int i = 0; i < intervalTracker.ChannelCount(); i++)
+            if (intervalTracker.trackerMode == Tracker.TrackerMode.MultiChannel)
             {
-                EditorGUI.indentLevel++;
-                
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                
-                _intervalChannel.Draw(intervalTracker.GetChannel(i));
-            
-                EditorGUILayout.EndVertical();
-                
-                EditorGUI.indentLevel--;
-            }
-
-            if (GUILayout.Button("Add Channel"))
-            {
-                intervalTracker.channels.Add(new IntervalChannel());
-
                 for (int i = 0; i < intervalTracker.ChannelCount(); i++)
                 {
-                    intervalTracker.GetChannel(i).ParentTracker = intervalTracker;
-                    Debug.Log(i);
-                    Debug.Log(intervalTracker.GetChannel(i).ParentTracker);
-                    intervalTracker.GetChannel(i).ChannelIndex = i;
+                    EditorGUI.indentLevel++;
+                
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                
+                    _intervalChannel.Draw(intervalTracker.GetChannel(i));
+
+                    if (intervalTracker.ChannelCount() > 1)
+                    {
+                        if (GUILayout.Button("Remove Channel"))
+                        {
+                            intervalTracker.channels.Remove(intervalTracker.GetChannel(i));
+                            UpdateChannels(intervalTracker);
+                        }
+                    }
+                
+                    EditorGUILayout.EndVertical();
+                
+                    EditorGUI.indentLevel--;
+                }
+
+                if (GUILayout.Button("Add Channel"))
+                {
+                    intervalTracker.channels.Add(new IntervalChannel());
+                    UpdateChannels(intervalTracker);
                 }
             }
+            else
+            {
+                _intervalChannel.Draw(intervalTracker.GetChannel(), true);
+            }
             
-            // save changess
+            // save changes
             if (GUI.changed)
             {
                 EditorUtility.SetDirty(intervalTracker);
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private void UpdateChannels(IntervalTracker intervalTracker)
+        {
+            for (int i = 0; i < intervalTracker.ChannelCount(); i++)
+            {
+                intervalTracker.GetChannel(i).ParentTracker = intervalTracker;
+                intervalTracker.GetChannel(i).ChannelIndex = i;
             }
         }
     }

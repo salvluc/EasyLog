@@ -14,31 +14,36 @@ namespace EasyLog.Editor
         private readonly Dictionary<IntervalChannel, bool> _logSettingsFoldoutStates = new();
         private readonly PropertySelectionEditor _propertySelection = new();
 
-        public void Draw(IntervalChannel intervalChannel)
+        public void Draw(IntervalChannel intervalChannel, bool singleChannel = false)
         {
             _channelFoldoutStates.TryAdd(intervalChannel, true); // Default state
 
             _logSettingsFoldoutStates.TryAdd(intervalChannel, true); // Default state
 
-            _channelFoldoutStates[intervalChannel] = EditorGUILayout.Foldout(
-                _channelFoldoutStates[intervalChannel], 
-                "Channel " + intervalChannel.ChannelIndex, 
-                EditorStyles.foldoutHeader);
+            if (!singleChannel)
+            {
+                _channelFoldoutStates[intervalChannel] = EditorGUILayout.Foldout(
+                    _channelFoldoutStates[intervalChannel],
+                    "Channel " + intervalChannel.ChannelIndex,
+                    EditorStyles.foldoutHeader);
 
-            if (!_channelFoldoutStates[intervalChannel])
-                return;
-            
-            EditorGUI.indentLevel++;
-            
+
+                if (!_channelFoldoutStates[intervalChannel])
+                    return;
+
+                EditorGUI.indentLevel++;
+            }
+
             _logSettingsFoldoutStates[intervalChannel] = EditorGUILayout.Foldout(
                 _logSettingsFoldoutStates[intervalChannel], 
                 "Log Settings", 
                 EditorStyles.foldoutHeader);
 
+            if (singleChannel)
+                EditorGUI.indentLevel = 1;
+
             if (_logSettingsFoldoutStates[intervalChannel])
             {
-                EditorGUI.indentLevel++;
-                
                 var trackOptions = Enum.GetValues(typeof(IntervalChannel.IntervalOption)).Cast<IntervalChannel.IntervalOption>().ToArray();
                 int trackMethod = EditorGUILayout.Popup(
                     new GUIContent("Interval Type"),
@@ -67,8 +72,6 @@ namespace EasyLog.Editor
 
                 if (!intervalChannel.startAutomatically)
                     EditorGUILayout.HelpBox("The tracker will be inactive until manually started with Unpause().", MessageType.Info);
-
-                EditorGUI.indentLevel--;
             }
 
             EditorGUILayout.Space();

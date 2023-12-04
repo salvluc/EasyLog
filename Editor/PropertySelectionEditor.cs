@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using EasyLog.Core;
 using UnityEditor;
+using UnityEditor.Graphs;
 using UnityEngine;
 
 namespace EasyLog.Editor
@@ -23,11 +24,11 @@ namespace EasyLog.Editor
 
             if (_trackedIntervalPropertiesFoldoutStates[channel])
             {
-                EditorGUI.indentLevel++;
+                EditorGUI.indentLevel = 1;
                 
                 for (int i = 0; i < channel.trackedPropertiesViaEditor.Count; i++)
                 {
-                    EditorGUI.indentLevel--;
+                    EditorGUI.indentLevel = 2;
                     
                     EditorGUILayout.BeginHorizontal();
 
@@ -38,6 +39,8 @@ namespace EasyLog.Editor
                         typeof(GameObject),
                         true
                     ) as GameObject;
+                    
+                    EditorGUI.indentLevel = 0;
 
                     // COMPONENT DROPDOWN
                     if (selectedObject != null)
@@ -87,19 +90,18 @@ namespace EasyLog.Editor
                         int newIndex = EditorGUILayout.Popup(currentIndex, propertiesAndFields.ToArray());
                         channel.trackedPropertiesViaEditor[i].propertyName = propertiesAndFields[newIndex];
                     }
-
+                    
                     // REMOVE BUTTON
                     if (GUILayout.Button("Remove"))
                         channel.trackedPropertiesViaEditor.RemoveAt(i);
-
-                    EditorGUI.indentLevel++;
+                    
                     EditorGUILayout.EndHorizontal();
                 }
                 
                 if (GUILayout.Button("Add Property"))
                     channel.trackedPropertiesViaEditor.Add(new TrackedProperty());
 
-                EditorGUI.indentLevel--;
+                EditorGUI.indentLevel = 2;
             }
         }
         /*

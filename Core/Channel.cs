@@ -46,7 +46,10 @@ namespace EasyLog.Core
             if (_trackedPropertiesViaCode.ContainsKey(propertyName))
                 Debug.LogWarning("EasyLog: Cannot add \"" + propertyName + "\" because a property with the same name is already being tracked.");
             else
+            {
                 _trackedPropertiesViaCode[propertyName] = () => Convert.ToString(propertyAccessor());
+                Debug.Log("ADDED: " + propertyName);
+            }
         }
         
         protected void WriteHeaders()

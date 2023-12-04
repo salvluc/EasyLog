@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using EasyLog.Trackers;
 using UnityEngine;
 
 namespace EasyLog.Core
@@ -46,13 +45,10 @@ namespace EasyLog.Core
         {
             while (true)
             {
-                foreach (IntervalChannel channel in ((IntervalTracker)ParentTracker).channels)
-                {
-                    if (channel._isPaused)
-                        continue;
-                        
-                    WriteValues();
-                }
+                if (_isPaused)
+                    continue;
+                    
+                WriteValues();
                 
                 if (timeScaleOption == TimeScaleOption.Scaled)
                     yield return new WaitForSeconds(_delayBetweenLogs);

@@ -29,6 +29,12 @@ namespace EasyLog.Trackers
 
         public void Start()
         {
+            if (trackerMode == TrackerMode.Simple)
+            {
+                StartCoroutine(GetChannel().InitializeLogging());
+                return;
+            }
+
             foreach (IntervalChannel channel in channels)
             {
                 StartCoroutine(channel.InitializeLogging());
@@ -39,6 +45,12 @@ namespace EasyLog.Trackers
         {
             base.Initialize();
             
+            if (trackerMode == TrackerMode.Simple)
+            {
+                GetChannel().Initialize();
+                return;
+            }
+            
             foreach (IntervalChannel channel in channels)
             {
                 channel.Initialize();
@@ -47,13 +59,11 @@ namespace EasyLog.Trackers
         
         public IntervalChannel GetChannel(int channelIndex = 0)
         {
-            if (channels.Count <= channelIndex)
-            {
-                Debug.LogError("This channel does not exist.");
-                return null;
-            }
+            if (channels.Count > channelIndex)
+                return channels[channelIndex];
             
-            return channels[channelIndex];
+            Debug.LogError("This channel does not exist. Instead returning the highest channel.");
+            return channels[ChannelCount()-1];
         }
 
         public int ChannelCount()
