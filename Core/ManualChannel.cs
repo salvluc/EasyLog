@@ -1,19 +1,21 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
 namespace EasyLog.Core
 {
+    [Serializable]
     public class ManualChannel : Channel
     {
         private static bool _hasBeenStarted;
         [HideInInspector] public bool logOnStart;
         
-        private void Start()
+        public void Initialize()
         {
-            ParentTracker.StartCoroutine(InitializeLogging());
+            _initialized = true;
         }
         
-        private IEnumerator InitializeLogging()
+        public IEnumerator InitializeLogging()
         {
             // wait to ensure all code-based variables are registered
             yield return new WaitForSeconds(0.1f);

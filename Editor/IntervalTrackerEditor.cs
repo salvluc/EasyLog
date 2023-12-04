@@ -1,4 +1,3 @@
-using System;
 using EasyLog.Core;
 using EasyLog.Trackers;
 using UnityEditor;
@@ -6,7 +5,6 @@ using UnityEngine;
 
 namespace EasyLog.Editor
 {
-    [Serializable]
     [CustomEditor(typeof(IntervalTracker))]
     [CanEditMultipleObjects]
     public class IntervalTrackerEditor : UnityEditor.Editor

@@ -10,7 +10,6 @@ namespace EasyLog.Trackers
         public static IntervalTracker Current => _current;
         private static IntervalTracker _current;
         
-        [HideInInspector] public IntervalChannel _standardChannel = new IntervalChannel();
         [HideInInspector] public List<IntervalChannel> channels = new List<IntervalChannel>();
         
         private void Awake()
@@ -79,7 +78,7 @@ namespace EasyLog.Trackers
 
         private void OnApplicationQuit()
         {
-            Debug.Log("EasyLog: Successfully saved logs at: " + saveLocation);
+            Debug.Log("EasyLog: Successfully saved log(s) at: " + saveLocation);
         }
     }
 }

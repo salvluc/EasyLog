@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using EasyLog.Core;
 using EasyLog.Trackers;
 using UnityEditor;
@@ -28,15 +26,61 @@ namespace EasyLog.Editor
             
             EditorGUILayout.Space();
             
-            manualTracker.GetChannel().ParentTracker = manualTracker;
+            if (manualTracker.ChannelCount() == 0)
+                AddChannel(manualTracker);
             
-            _manualChannel.Draw(manualTracker.GetChannel());
+            if (manualTracker.trackerMode == Tracker.TrackerMode.MultiChannel)
+            {
+                for (int i = 0; i < manualTracker.ChannelCount(); i++)
+                {
+                    EditorGUI.indentLevel++;
+                
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                
+                    _manualChannel.Draw(manualTracker.GetChannel(i));
+
+                    if (manualTracker.ChannelCount() > 1)
+                    {
+                        if (GUILayout.Button("Remove Channel"))
+                        {
+                            manualTracker.channels.Remove(manualTracker.GetChannel(i));
+                            UpdateChannels(manualTracker);
+                        }
+                    }
+                
+                    EditorGUILayout.EndVertical();
+                
+                    EditorGUI.indentLevel--;
+                }
+
+                if (GUILayout.Button("Add Channel"))
+                    AddChannel(manualTracker);
+            }
+            else
+            {
+                _manualChannel.Draw(manualTracker.GetChannel(), true);
+            }
             
             // save changes
             if (GUI.changed)
             {
                 EditorUtility.SetDirty(manualTracker);
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
+        
+        private void AddChannel(ManualTracker manualTracker)
+        {
+            manualTracker.channels.Add(new ManualChannel());
+            UpdateChannels(manualTracker);
+        }
+
+        private void UpdateChannels(ManualTracker manualTracker)
+        {
+            for (int i = 0; i < manualTracker.ChannelCount(); i++)
+            {
+                manualTracker.GetChannel(i).ParentTracker = manualTracker;
+                manualTracker.GetChannel(i).ChannelIndex = i;
             }
         }
     }

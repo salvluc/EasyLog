@@ -16,9 +16,9 @@ namespace EasyLog.Editor
 
         public void Draw(IntervalChannel intervalChannel, bool singleChannel = false)
         {
-            _channelFoldoutStates.TryAdd(intervalChannel, true); // Default state
+            _channelFoldoutStates.TryAdd(intervalChannel, true); // default state
 
-            _logSettingsFoldoutStates.TryAdd(intervalChannel, true); // Default state
+            _logSettingsFoldoutStates.TryAdd(intervalChannel, true); // default state
 
             if (!singleChannel)
             {
