@@ -75,10 +75,17 @@ namespace EasyLog.Editor
             }
 
             EditorGUILayout.Space();
-            
-            _propertySelection.DrawInterval(intervalChannel);
-            
-            EditorGUI.indentLevel--;
+
+            if (singleChannel)
+            {
+                EditorGUI.indentLevel = 0;
+                _propertySelection.DrawInterval(intervalChannel);
+            }
+            else
+            {
+                _propertySelection.DrawInterval(intervalChannel);
+                EditorGUI.indentLevel--;
+            }
         }
     }
 }

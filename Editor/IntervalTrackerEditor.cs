@@ -28,6 +28,9 @@ namespace EasyLog.Editor
             _fileSettings.Draw(intervalTracker);
             
             EditorGUILayout.Space();
+            
+            if (intervalTracker.ChannelCount() == 0)
+                AddChannel(intervalTracker);
 
             if (intervalTracker.trackerMode == Tracker.TrackerMode.MultiChannel)
             {
@@ -54,10 +57,7 @@ namespace EasyLog.Editor
                 }
 
                 if (GUILayout.Button("Add Channel"))
-                {
-                    intervalTracker.channels.Add(new IntervalChannel());
-                    UpdateChannels(intervalTracker);
-                }
+                    AddChannel(intervalTracker);
             }
             else
             {
@@ -70,6 +70,12 @@ namespace EasyLog.Editor
                 EditorUtility.SetDirty(intervalTracker);
                 serializedObject.ApplyModifiedProperties();
             }
+        }
+
+        private void AddChannel(IntervalTracker intervalTracker)
+        {
+            intervalTracker.channels.Add(new IntervalChannel());
+            UpdateChannels(intervalTracker);
         }
 
         private void UpdateChannels(IntervalTracker intervalTracker)

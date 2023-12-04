@@ -21,6 +21,8 @@ namespace EasyLog.Core
             _isPaused = !startAutomatically;
 
             _delayBetweenLogs = DelayBetweenLogs();
+
+            _initialized = true;
         }
         
         private float DelayBetweenLogs()

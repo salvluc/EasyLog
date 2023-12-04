@@ -59,10 +59,16 @@ namespace EasyLog.Trackers
         
         public IntervalChannel GetChannel(int channelIndex = 0)
         {
-            if (channels.Count > channelIndex)
+            if (trackerMode == TrackerMode.Simple && channelIndex > 0)
+            {
+                Debug.LogWarning("Tracker is not in Multi-Channel mode. Instead returning the standard channel.");
+                return channels[0];
+            }
+            
+            if (ChannelCount() > channelIndex)
                 return channels[channelIndex];
             
-            Debug.LogError("This channel does not exist. Instead returning the highest channel.");
+            Debug.LogWarning("This channel does not exist. Instead returning the highest channel.");
             return channels[ChannelCount()-1];
         }
 
