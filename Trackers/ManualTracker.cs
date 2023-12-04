@@ -1,5 +1,4 @@
-using System;
-using System.Collections;
+using System.Collections.Generic;
 using EasyLog.Core;
 using UnityEngine;
 
@@ -10,11 +9,10 @@ namespace EasyLog.Trackers
     {
         public static ManualTracker Current => _current;
         private static ManualTracker _current;
-
-        [HideInInspector] public bool logOnStart;
         
-        private static bool _hasBeenStarted;
-
+        private static ManualChannel _standardChannel = new ();
+        [HideInInspector] public List<ManualChannel> channels = new() { _standardChannel };
+        
         private void Awake()
         {
             if (_current == null)
@@ -25,58 +23,63 @@ namespace EasyLog.Trackers
                 Debug.LogWarning("EasyLog: Multiple Manual Trackers found! Make sure to only use one tracker of each type! Now removing excess trackers...");
                 Destroy(this);
             }
-        }
 
-        private void Start()
-        {
             Initialize();
-            
-            StartCoroutine(InitializeLogging());
         }
-
-        private IEnumerator InitializeLogging()
+        
+        public void Start()
         {
-            // wait to ensure all code-based variables are registered
-            yield return new WaitForSeconds(0.1f);
-
-            _hasBeenStarted = true;
-
-            WriteHeaders();
-            
-            if (logOnStart)
-                WriteValues();
-        }
-
-        /// <summary>
-        /// Starts tracking the specified property in a new column.
-        /// </summary>
-        /// <param name="propertyAccessor">The property to track, has to be handed over as a Func: "() => property".</param>
-        /// <param name="propertyName">The name the property will be saved under.</param>
-        public void AddNewProperty(Func<object> propertyAccessor, string propertyName)
-        {
-            if (_hasBeenStarted)
+            if (trackerMode == TrackerMode.Simple)
             {
-                Debug.LogWarning("EasyLog: You can not add new properties during runtime! Add properties in the Inspector or in Start()!");
+                StartCoroutine(GetChannel().InitializeLogging());
+                return;
+            }
+
+            foreach (ManualChannel channel in channels)
+            {
+                StartCoroutine(channel.InitializeLogging());
+            }
+        }
+        
+        protected override void Initialize()
+        {
+            base.Initialize();
+            
+            if (trackerMode == TrackerMode.Simple)
+            {
+                GetChannel().Initialize();
                 return;
             }
             
-            if (_trackedPropertiesViaCode.ContainsKey(propertyName))
-                Debug.LogWarning("EasyLog: Cannot add \"" + propertyName + "\" because a property with the same name is already being tracked.");
-            else
-                _trackedPropertiesViaCode[propertyName] = () => Convert.ToString(propertyAccessor());
+            foreach (ManualChannel channel in channels)
+            {
+                channel.Initialize();
+            }
         }
         
-        /// <summary>
-        /// Logs the values of all tracked properties.
-        /// </summary>
-        public void LogAllTrackedProperties()
+        public ManualChannel GetChannel(int channelIndex = 0)
         {
-            WriteValues();
+            if (trackerMode == TrackerMode.Simple && channelIndex > 0)
+            {
+                Debug.LogWarning("Tracker is not in Multi-Channel mode. Instead returning the standard channel.");
+                return channels[0];
+            }
+            
+            if (ChannelCount() > channelIndex)
+                return channels[channelIndex];
+            
+            Debug.LogWarning("This channel does not exist. Instead returning the highest channel.");
+            return channels[ChannelCount()-1];
         }
-
+        
+        public int ChannelCount()
+        {
+            return channels.Count;
+        }
+        
         private void OnApplicationQuit()
         {
-            Debug.Log("EasyLog: Successfully saved logs at: " + saveLocation);
+            Debug.Log("Manual Tracker: Successfully saved log(s) at: " + saveLocation);
         }
     }
 }

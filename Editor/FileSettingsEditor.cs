@@ -1,3 +1,4 @@
+using System;
 using EasyLog.Core;
 using EasyLog.Trackers;
 using UnityEditor;
@@ -5,6 +6,7 @@ using UnityEngine;
 
 namespace EasyLog.Editor
 {
+    [Serializable]
     public class FileSettingsEditor
     {
         private bool _showFileSettings = true;

@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using EasyLog.Core;
 using EasyLog.Trackers;
 using UnityEditor;
@@ -8,71 +6,82 @@ using UnityEngine;
 namespace EasyLog.Editor
 {
     [CustomEditor(typeof(IntervalTracker))]
+    [CanEditMultipleObjects]
     public class IntervalTrackerEditor : UnityEditor.Editor
     {
-        private bool _showAdvancedFileOptions;
-        private bool _showLogSettings = true;
-
-        private readonly PropertySelectionEditor _propertySelection = new();
+        private readonly TrackerSettingsEditor _trackerSettings = new();
         private readonly FileSettingsEditor _fileSettings = new();
+        private readonly IntervalChannelEditor _intervalChannel = new();
         
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-
+            
             IntervalTracker intervalTracker = (IntervalTracker)target;
+            
+            _trackerSettings.Draw(intervalTracker);
+            
+            EditorGUILayout.Space();
             
             _fileSettings.Draw(intervalTracker);
             
             EditorGUILayout.Space();
             
-            _showLogSettings = EditorGUILayout.Foldout(_showLogSettings, new GUIContent("Log Settings"), EditorStyles.foldoutHeader);
+            if (intervalTracker.ChannelCount() == 0)
+                AddChannel(intervalTracker);
 
-            if (_showLogSettings)
+            if (intervalTracker.trackerMode == Tracker.TrackerMode.MultiChannel)
             {
-                EditorGUI.indentLevel++;
+                for (int i = 0; i < intervalTracker.ChannelCount(); i++)
+                {
+                    EditorGUI.indentLevel++;
                 
-                var trackOptions = Enum.GetValues(typeof(IntervalTracker.IntervalOption)).Cast<IntervalTracker.IntervalOption>().ToArray();
-                int trackMethod = EditorGUILayout.Popup(
-                    new GUIContent("Interval Type"),
-                    (int)intervalTracker.intervalOption,
-                    trackOptions.Select(e => e.ToString()).ToArray());
-                intervalTracker.intervalOption = (IntervalTracker.IntervalOption)trackMethod;
-
-                GUIContent logIntervalLabel = intervalTracker.intervalOption == IntervalTracker.IntervalOption.Seconds
-                    ? new GUIContent("Log Every X Seconds", "How many seconds between the logs.")
-                    : new GUIContent("Logs Per Second", "How many logs per second.");
-            
-                intervalTracker.logInterval = EditorGUILayout.IntSlider(
-                    logIntervalLabel, intervalTracker.logInterval, 1, 60);
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 
-                var timeOptions = Enum.GetValues(typeof(Tracker.TimeScaleOption)).Cast<Tracker.TimeScaleOption>().ToArray();
-                int timeOption = EditorGUILayout.Popup(
-                    new GUIContent("Time Scale", "The time scale used for logging and timestamps."),
-                    (int)intervalTracker.timeScaleOption,
-                    timeOptions.Select(e => e.ToString()).ToArray());
-                intervalTracker.timeScaleOption = (Tracker.TimeScaleOption)timeOption;
+                    _intervalChannel.Draw(intervalTracker.GetChannel(i));
 
-                intervalTracker.startAutomatically = EditorGUILayout.Toggle(
-                    new GUIContent("Start Automatically", 
-                        "True = Tracker starts logging on game start.\nFalse = Tracker has to be started manually."), 
-                    intervalTracker.startAutomatically);
+                    if (intervalTracker.ChannelCount() > 1)
+                    {
+                        if (GUILayout.Button("Remove Channel"))
+                        {
+                            intervalTracker.channels.Remove(intervalTracker.GetChannel(i));
+                            UpdateChannels(intervalTracker);
+                        }
+                    }
+                
+                    EditorGUILayout.EndVertical();
+                
+                    EditorGUI.indentLevel--;
+                }
 
-                if (!intervalTracker.startAutomatically)
-                    EditorGUILayout.HelpBox("The tracker will be inactive until manually started with Unpause().", MessageType.Info);
-
-                EditorGUI.indentLevel--;
+                if (GUILayout.Button("Add Channel"))
+                    AddChannel(intervalTracker);
             }
-
-            EditorGUILayout.Space();
-            
-            _propertySelection.Draw(intervalTracker);
+            else
+            {
+                _intervalChannel.Draw(intervalTracker.GetChannel(), true);
+            }
             
             // save changes
             if (GUI.changed)
             {
                 EditorUtility.SetDirty(intervalTracker);
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private void AddChannel(IntervalTracker intervalTracker)
+        {
+            intervalTracker.channels.Add(new IntervalChannel());
+            UpdateChannels(intervalTracker);
+        }
+
+        private void UpdateChannels(IntervalTracker intervalTracker)
+        {
+            for (int i = 0; i < intervalTracker.ChannelCount(); i++)
+            {
+                intervalTracker.GetChannel(i).ParentTracker = intervalTracker;
+                intervalTracker.GetChannel(i).ChannelIndex = i;
             }
         }
     }
