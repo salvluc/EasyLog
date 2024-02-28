@@ -9,7 +9,7 @@ namespace EasyLog.Editor
     public class ManualTrackerEditor : UnityEditor.Editor
     {
         private readonly TrackerSettingsEditor _trackerSettings = new();
-        private readonly FileSettingsEditor _fileSettings = new();
+        private readonly OutputSettingsEditor _outputSettings = new();
         private readonly ManualChannelEditor _manualChannel = new();
         
         public override void OnInspectorGUI()
@@ -22,7 +22,7 @@ namespace EasyLog.Editor
             
             EditorGUILayout.Space();
             
-            _fileSettings.Draw(manualTracker);
+            _outputSettings.Draw(manualTracker);
             
             EditorGUILayout.Space();
             

@@ -9,6 +9,9 @@ namespace EasyLog.Core
         public enum TrackerMode { Simple, MultiChannel }
         [HideInInspector] public TrackerMode trackerMode = TrackerMode.Simple;
         
+        public enum OutputFormat { Influx, CSV }
+        [HideInInspector] public OutputFormat outputFormat = OutputFormat.Influx;
+        
         [HideInInspector] public string filePrefix = "Log";
         [HideInInspector] public string fileSuffix;
         [HideInInspector] public string saveLocation = Application.dataPath;

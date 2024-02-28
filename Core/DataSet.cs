@@ -27,6 +27,20 @@ namespace EasyLog.Core
             return data;
         }
 
+        public string SerializeForCSV(char delimiter, char delimiterReplacement)
+        {
+            string data = string.Empty;
+        
+            foreach (var dataPoint in _data)
+            {
+                data += $"{dataPoint.Time.ToString().Replace(delimiter, delimiterReplacement)}" +
+                        $"{delimiter}{dataPoint.Name.Replace(delimiter, delimiterReplacement)}" +
+                        $"{delimiter}{dataPoint.Value.Replace(delimiter, delimiterReplacement)}\n";
+            }
+
+            return data;
+        }
+
         private static string InfluxFormat(string input)
         {
             input = input.Replace(",", ".");

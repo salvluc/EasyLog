@@ -10,7 +10,7 @@ namespace EasyLog.Editor
     public class IntervalTrackerEditor : UnityEditor.Editor
     {
         private readonly TrackerSettingsEditor _trackerSettings = new();
-        private readonly FileSettingsEditor _fileSettings = new();
+        private readonly OutputSettingsEditor _outputSettings = new();
         private readonly IntervalChannelEditor _intervalChannel = new();
         
         public override void OnInspectorGUI()
@@ -23,7 +23,7 @@ namespace EasyLog.Editor
             
             EditorGUILayout.Space();
             
-            _fileSettings.Draw(intervalTracker);
+            _outputSettings.Draw(intervalTracker);
             
             EditorGUILayout.Space();
             

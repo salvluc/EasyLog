@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
 using UnityEngine;
 
 namespace EasyLog.Core
@@ -67,11 +66,8 @@ namespace EasyLog.Core
 
                     else if (fieldInfo != null)
                         value = fieldInfo.GetValue(trackedVar.component).ToString();
-
-                    // replace commas with dots to prevent delimiter issues
-                    value = value.Replace(ParentTracker.delimiter, ParentTracker.delimiterReplacement);
                     
-                    DataPoint newData = new DataPoint(trackedVar.Name, GetUnformattedTime(), value);
+                    DataPoint newData = new DataPoint(trackedVar.Name, GetFormattedTime(), value);
                     DataSet.Add(newData);
                 }
             }
@@ -81,17 +77,17 @@ namespace EasyLog.Core
             {
                 string value = trackedVar.Value.Invoke();
                 
-                // replace commas with dots to prevent delimiter issues
-                value = value.Replace(ParentTracker.delimiter, ParentTracker.delimiterReplacement);
-                
-                DataPoint newData = new DataPoint(trackedVar.Key, GetUnformattedTime(), value);
+                DataPoint newData = new DataPoint(trackedVar.Key, GetFormattedTime(), value);
                 DataSet.Add(newData);
             }
         }
 
         public void SaveDataToDisk()
         {
-            File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForInflux());
+            if (ParentTracker.outputFormat == Tracker.OutputFormat.Influx)
+                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForInflux());
+            if (ParentTracker.outputFormat == Tracker.OutputFormat.CSV)
+                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForCSV(ParentTracker.delimiter, ParentTracker.delimiterReplacement));
         }
         
         private string GetFormattedTime()
@@ -109,18 +105,14 @@ namespace EasyLog.Core
         private float GetUnformattedTime()
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
-            string formattedTime = string.Format("{0:D2}:{1:D2}:{2:D2}.{3:D}",
-                timeSpan.Hours,
-                timeSpan.Minutes,
-                timeSpan.Seconds,
-                timeSpan.Milliseconds);
-
             return (float)timeSpan.TotalSeconds;
         }
 
         private string GetChannelFilePath()
         {
-            return $"{ParentTracker._filePath.Remove(ParentTracker._filePath.Length - 3)}_Channel{ChannelIndex}.txt";
+            string fileEnding = ParentTracker.outputFormat == Tracker.OutputFormat.Influx ? ".txt" : ".csv";
+            
+            return $"{ParentTracker._filePath.Remove(ParentTracker._filePath.Length - 3)}_Channel{ChannelIndex}{fileEnding}";
         }
     }
 }
