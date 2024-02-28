@@ -78,6 +78,11 @@ namespace EasyLog.Trackers
 
         private void OnApplicationQuit()
         {
+            foreach (IntervalChannel channel in channels)
+            {
+                channel.SaveDataToDisk();
+            }
+            
             Debug.Log("Interval Tracker: Successfully saved log(s) at: " + saveLocation);
         }
     }

@@ -7,7 +7,6 @@ namespace EasyLog.Core
     [Serializable]
     public class ManualChannel : Channel
     {
-        private static bool _hasBeenStarted;
         [HideInInspector] public bool logOnStart;
         
         public void Initialize()
@@ -19,13 +18,8 @@ namespace EasyLog.Core
         {
             // wait to ensure all code-based variables are registered
             yield return new WaitForSeconds(0.1f);
-
-            WriteHeaders();
-
-            _hasBeenStarted = true;
-            
             if (logOnStart)
-                WriteValues();
+                CaptureValues();
         }
         
         /// <summary>
@@ -39,7 +33,7 @@ namespace EasyLog.Core
                 return;
             }
             
-            WriteValues();
+            CaptureValues();
         }
     }
 }

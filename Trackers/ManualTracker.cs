@@ -79,6 +79,10 @@ namespace EasyLog.Trackers
         
         private void OnApplicationQuit()
         {
+            foreach (ManualChannel channel in channels)
+            {
+                channel.SaveDataToDisk();
+            }
             Debug.Log("Manual Tracker: Successfully saved log(s) at: " + saveLocation);
         }
     }

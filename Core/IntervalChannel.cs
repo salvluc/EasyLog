@@ -13,7 +13,7 @@ namespace EasyLog.Core
         [HideInInspector] public int logInterval = 1;
 
         [HideInInspector] public bool startAutomatically = true;
-        private bool _isPaused = false;
+        private bool _isPaused;
         private float _delayBetweenLogs;
 
         public void Initialize()
@@ -34,9 +34,6 @@ namespace EasyLog.Core
         {
             // wait to ensure all code-based variables are registered
             yield return new WaitForSeconds(0.1f);
-            
-            WriteHeaders();
-            
             _hasBeenStarted = true;
             
             if (startAutomatically)
@@ -50,7 +47,7 @@ namespace EasyLog.Core
                 if (_isPaused)
                     continue;
                     
-                WriteValues();
+                CaptureValues();
                 
                 if (timeScaleOption == TimeScaleOption.Scaled)
                     yield return new WaitForSeconds(_delayBetweenLogs);

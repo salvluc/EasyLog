@@ -14,9 +14,6 @@ namespace EasyLog.Core
         [HideInInspector] public string saveLocation = Application.dataPath;
         [HideInInspector] public char delimiter = ',';
         [HideInInspector] public char delimiterReplacement = '.';
-
-        //private static Channel _standardChannel = new ();
-        //[HideInInspector] public List<Channel> channels = new() { _standardChannel };
         
         [HideInInspector] public string _filePath;
 

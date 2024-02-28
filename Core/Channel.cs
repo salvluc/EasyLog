@@ -16,6 +16,8 @@ namespace EasyLog.Core
         public enum TimeScaleOption { Scaled, Unscaled }
         [HideInInspector] public TimeScaleOption timeScaleOption = TimeScaleOption.Scaled;
 
+        protected DataSet DataSet = new DataSet();
+
         public Tracker ParentTracker;
 
         public int ChannelIndex = 0;
@@ -49,41 +51,17 @@ namespace EasyLog.Core
                 _trackedPropertiesViaCode[propertyName] = () => Convert.ToString(propertyAccessor());
         }
         
-        protected void WriteHeaders()
+        protected void CaptureValues()
         {
-            List<string> headers = new List<string>();
-
-            headers.Add("Time");
-
-            // add headers from inspector-based properties
-            foreach (var trackedVar in trackedPropertiesViaEditor)
-            {
-                headers.Add(trackedVar.component.gameObject.name + " " + trackedVar.component.GetType().Name + " " + trackedVar.propertyName);
-            }
-
-            // add headers from code-based properties
-            headers.AddRange(_trackedPropertiesViaCode.Keys);
-
-            string headerLine = string.Join(",", headers);
-            File.WriteAllText(GetChannelFilePath(), headerLine + Environment.NewLine);
-        }
-        
-        protected void WriteValues()
-        {
-            StringBuilder logLine = new StringBuilder();
-
-            logLine.Append(GetFormattedTime() + ParentTracker.delimiter);
-
-            // add values tracked via inspector
             foreach (var trackedVar in trackedPropertiesViaEditor)
             {
                 if (trackedVar.component != null && !string.IsNullOrEmpty(trackedVar.propertyName))
                 {
+                    string value = "";
+                    
                     PropertyInfo propInfo = trackedVar.component.GetType().GetProperty(trackedVar.propertyName);
                     FieldInfo fieldInfo = trackedVar.component.GetType().GetField(trackedVar.propertyName);
-
-                    string value = "";
-
+                    
                     if (propInfo != null)
                         value = propInfo.GetValue(trackedVar.component, null).ToString();
 
@@ -92,28 +70,28 @@ namespace EasyLog.Core
 
                     // replace commas with dots to prevent delimiter issues
                     value = value.Replace(ParentTracker.delimiter, ParentTracker.delimiterReplacement);
-
-                    logLine.Append(value + ",");
+                    
+                    DataPoint newData = new DataPoint(trackedVar.Name, GetUnformattedTime(), value);
+                    DataSet.Add(newData);
                 }
             }
 
             // add values tracked via code
-            foreach (var func in _trackedPropertiesViaCode.Values)
+            foreach (var trackedVar in _trackedPropertiesViaCode)
             {
-                string value = func.Invoke();
+                string value = trackedVar.Value.Invoke();
                 
                 // replace commas with dots to prevent delimiter issues
                 value = value.Replace(ParentTracker.delimiter, ParentTracker.delimiterReplacement);
                 
-                logLine.Append(value + ParentTracker.delimiter);
+                DataPoint newData = new DataPoint(trackedVar.Key, GetUnformattedTime(), value);
+                DataSet.Add(newData);
             }
+        }
 
-            // remove last delimiter
-            if (logLine.Length > 0)
-                logLine.Length--;
-
-            // write to .csv file
-            File.AppendAllText(GetChannelFilePath(), logLine + Environment.NewLine);
+        public void SaveDataToDisk()
+        {
+            File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForInflux());
         }
         
         private string GetFormattedTime()
@@ -127,10 +105,22 @@ namespace EasyLog.Core
 
             return formattedTime;
         }
+        
+        private float GetUnformattedTime()
+        {
+            TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
+            string formattedTime = string.Format("{0:D2}:{1:D2}:{2:D2}.{3:D}",
+                timeSpan.Hours,
+                timeSpan.Minutes,
+                timeSpan.Seconds,
+                timeSpan.Milliseconds);
+
+            return (float)timeSpan.TotalSeconds;
+        }
 
         private string GetChannelFilePath()
         {
-            return $"{ParentTracker._filePath.Remove(ParentTracker._filePath.Length - 3)}_Channel{ChannelIndex}.csv";
+            return $"{ParentTracker._filePath.Remove(ParentTracker._filePath.Length - 3)}_Channel{ChannelIndex}.txt";
         }
     }
 }
