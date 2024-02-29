@@ -11,30 +11,22 @@ namespace EasyLog.Core
         
         [HideInInspector] public IntervalOption intervalOption = IntervalOption.Seconds;
         [HideInInspector] public int logInterval = 1;
-
         [HideInInspector] public bool startAutomatically = true;
+        
+        private float DelayBetweenLogs => intervalOption == IntervalOption.Seconds ? logInterval : 1f / logInterval;
         private bool _isPaused;
-        private float _delayBetweenLogs;
 
-        public void Initialize()
+        public override void Initialize()
         {
             _isPaused = !startAutomatically;
-
-            _delayBetweenLogs = DelayBetweenLogs();
-
-            _initialized = true;
-        }
-        
-        private float DelayBetweenLogs()
-        {
-            return intervalOption == IntervalOption.Seconds ? logInterval : 1f / logInterval;
+            base.Initialize();
         }
         
         public IEnumerator InitializeLogging()
         {
             // wait to ensure all code-based variables are registered
             yield return new WaitForSeconds(0.1f);
-            _hasBeenStarted = true;
+            HasBeenStarted = true;
             
             if (startAutomatically)
                 ParentTracker.StartCoroutine(TrackByInterval());
@@ -50,9 +42,9 @@ namespace EasyLog.Core
                 CaptureValues();
                 
                 if (timeScaleOption == TimeScaleOption.Scaled)
-                    yield return new WaitForSeconds(_delayBetweenLogs);
+                    yield return new WaitForSeconds(DelayBetweenLogs);
                 else
-                    yield return new WaitForSecondsRealtime(_delayBetweenLogs);
+                    yield return new WaitForSecondsRealtime(DelayBetweenLogs);
             }
         }
         

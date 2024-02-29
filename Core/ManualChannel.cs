@@ -9,11 +9,6 @@ namespace EasyLog.Core
     {
         [HideInInspector] public bool logOnStart;
         
-        public void Initialize()
-        {
-            _initialized = true;
-        }
-        
         public IEnumerator InitializeLogging()
         {
             // wait to ensure all code-based variables are registered
@@ -27,7 +22,7 @@ namespace EasyLog.Core
         /// </summary>
         public void LogAllTrackedProperties()
         {
-            if (!_initialized)
+            if (!Initialized)
             {
                 Debug.LogWarning("EasyLog: You can not log before Start()!");
                 return;

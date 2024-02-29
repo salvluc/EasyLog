@@ -9,21 +9,27 @@ namespace EasyLog.Core
     [Serializable]
     public class Channel
     {
-        [HideInInspector] public List<TrackedProperty> trackedPropertiesViaEditor = new List<TrackedProperty>();
-        private Dictionary<string, Func<string>> _trackedPropertiesViaCode = new Dictionary<string, Func<string>>();
+        [HideInInspector] public List<TrackedProperty> trackedPropertiesViaEditor = new();
+        private Dictionary<string, Func<string>> _trackedPropertiesViaCode = new();
         
         public enum TimeScaleOption { Scaled, Unscaled }
         [HideInInspector] public TimeScaleOption timeScaleOption = TimeScaleOption.Scaled;
 
-        protected DataSet DataSet = new DataSet();
-
         public Tracker ParentTracker;
+        public int ChannelIndex;
+    
+        protected DataSet DataSet = new();
+        protected bool Initialized;
+        protected bool HasBeenStarted;
 
-        public int ChannelIndex = 0;
-        
-        protected bool _initialized;
-        
-        protected bool _hasBeenStarted;
+        protected string SessionId;
+
+        public virtual void Initialize()
+        {
+            SessionId = Guid.NewGuid().ToString("n");
+            
+            Initialized = true;
+        }
         
         /// <summary>
         /// Starts tracking the specified property in a new column.
@@ -32,13 +38,13 @@ namespace EasyLog.Core
         /// <param name="propertyName">The name the property will be saved under.</param>
         public void AddNewProperty(Func<object> propertyAccessor, string propertyName)
         {
-            if (!_initialized)
+            if (!Initialized)
             {
                 Debug.LogWarning("EasyLog: You can not add properties before Start()! Add properties in the Inspector or in Start()!");
                 return;
             }
             
-            if (_hasBeenStarted)
+            if (HasBeenStarted)
             {
                 Debug.LogWarning("EasyLog: You can not add new properties during runtime! Add properties in the Inspector or in Start()!");
                 return;
@@ -54,22 +60,22 @@ namespace EasyLog.Core
         {
             foreach (var trackedVar in trackedPropertiesViaEditor)
             {
-                if (trackedVar.component != null && !string.IsNullOrEmpty(trackedVar.propertyName))
-                {
-                    string value = "";
+                if (trackedVar.component == null || string.IsNullOrEmpty(trackedVar.propertyName)) continue;
+                
+                string value = "";
+                PropertyInfo propInfo = trackedVar.component.GetType().GetProperty(trackedVar.propertyName);
+                FieldInfo fieldInfo = trackedVar.component.GetType().GetField(trackedVar.propertyName);
                     
-                    PropertyInfo propInfo = trackedVar.component.GetType().GetProperty(trackedVar.propertyName);
-                    FieldInfo fieldInfo = trackedVar.component.GetType().GetField(trackedVar.propertyName);
-                    
-                    if (propInfo != null)
-                        value = propInfo.GetValue(trackedVar.component, null).ToString();
+                if (propInfo != null)
+                    value = propInfo.GetValue(trackedVar.component, null).ToString();
 
-                    else if (fieldInfo != null)
-                        value = fieldInfo.GetValue(trackedVar.component).ToString();
+                else if (fieldInfo != null)
+                    value = fieldInfo.GetValue(trackedVar.component).ToString();
+
+                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", SessionId} };
                     
-                    DataPoint newData = new DataPoint(trackedVar.Name, GetFormattedTime(), value);
-                    DataSet.Add(newData);
-                }
+                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Name, value, newTags);
+                DataSet.Add(newData);
             }
 
             // add values tracked via code
@@ -77,7 +83,9 @@ namespace EasyLog.Core
             {
                 string value = trackedVar.Value.Invoke();
                 
-                DataPoint newData = new DataPoint(trackedVar.Key, GetFormattedTime(), value);
+                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", SessionId} };
+                
+                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Key, value, newTags);
                 DataSet.Add(newData);
             }
         }
@@ -100,6 +108,12 @@ namespace EasyLog.Core
                 timeSpan.Milliseconds);
 
             return formattedTime;
+        }
+        
+        private string GetUnixTime()
+        {
+            TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
+            return ((long)Mathf.Floor((float)timeSpan.TotalSeconds) + 1704067200).ToString();
         }
         
         private float GetUnformattedTime()

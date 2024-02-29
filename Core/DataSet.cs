@@ -9,8 +9,8 @@ namespace EasyLog.Core
 
         public void Add(DataPoint dataPoint)
         {
-            if (!_measurementNames.Contains(dataPoint.Name))
-                _measurementNames.Add(dataPoint.Name);
+            if (!_measurementNames.Contains(dataPoint.MeasurementName))
+                _measurementNames.Add(dataPoint.MeasurementName);
         
             _data.Add(dataPoint);
         }
@@ -21,7 +21,7 @@ namespace EasyLog.Core
         
             foreach (var dataPoint in _data)
             {
-                data += $"{InfluxFormat(dataPoint.Name)} {InfluxFormat(dataPoint.Value)} {InfluxFormat(dataPoint.Time.ToString())}\n";
+                data += $"{dataPoint.SerializeForInflux()}\n";
             }
 
             return data;
@@ -34,7 +34,7 @@ namespace EasyLog.Core
             foreach (var dataPoint in _data)
             {
                 data += $"{dataPoint.Time.ToString().Replace(delimiter, delimiterReplacement)}" +
-                        $"{delimiter}{dataPoint.Name.Replace(delimiter, delimiterReplacement)}" +
+                        $"{delimiter}{dataPoint.MeasurementName.Replace(delimiter, delimiterReplacement)}" +
                         $"{delimiter}{dataPoint.Value.Replace(delimiter, delimiterReplacement)}\n";
             }
 
@@ -45,6 +45,14 @@ namespace EasyLog.Core
         {
             input = input.Replace(",", ".");
             return input.Replace(" ", "");
+        }
+        
+        private static string InfluxValueFormat(string input)
+        {
+            if (float.TryParse(input, out float floatParse))
+                return InfluxFormat(input);
+            
+            return "\"" + InfluxFormat(input) + "\"";
         }
     }
 }
