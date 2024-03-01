@@ -8,24 +8,24 @@ namespace EasyLog.Core
     [AddComponentMenu("EasyLog/Tracker")]
     public class Tracker : MonoBehaviour
     {
+        [HideInInspector] public List<Channel> channels = new();
+        
+        public static Tracker Current { get; private set; }
+        public int ChannelCount => channels.Count;
+        public string SessionId { get; private set; }
+        public string FilePath { get; private set; }
+        
         public enum TrackerMode { Simple, MultiChannel }
         [HideInInspector] public TrackerMode trackerMode = TrackerMode.Simple;
         
         public enum OutputFormat { Influx, CSV }
         [HideInInspector] public OutputFormat outputFormat = OutputFormat.Influx;
         
-        [HideInInspector] public string filePrefix = "Log";
+        [HideInInspector] public string filePrefix = "Log_";
         [HideInInspector] public string fileSuffix;
         [HideInInspector] public string saveLocation = Application.dataPath;
         [HideInInspector] public char delimiter = ',';
         [HideInInspector] public char delimiterReplacement = '.';
-        
-        [HideInInspector] public string _filePath;
-        public static Tracker Current { get; private set; }
-        public int ChannelCount => channels.Count;
-        public string SessionId { get; private set; }
-        
-        [HideInInspector] public List<Channel> channels = new List<Channel>();
         
         private void Awake()
         {
@@ -57,12 +57,10 @@ namespace EasyLog.Core
         
         private void Initialize()
         {
-            // format current date and time
-            string dateTimeFormat = "dd-MM-yyyy_HH-mm";
-            string formattedDateTime = DateTime.Now.ToString(dateTimeFormat);
-            string fileName = $"{filePrefix}_{formattedDateTime}_{fileSuffix}.csv";
+            string formattedDateTime = DateTime.Now.ToString("dd-MM-yyyy_HH-mm");
+            string fileName = $"{filePrefix}{formattedDateTime}{fileSuffix}.csv";
 
-            _filePath = Path.Combine(saveLocation, fileName);
+            FilePath = Path.Combine(saveLocation, fileName);
             
             SessionId = Guid.NewGuid().ToString("n");
         }

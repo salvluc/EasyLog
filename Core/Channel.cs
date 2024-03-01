@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace EasyLog.Core
     public class Channel
     {
         [HideInInspector] public List<TrackedProperty> trackedPropertiesViaEditor = new();
-        private Dictionary<string, Func<string>> _trackedPropertiesViaCode = new();
+        [HideInInspector] public List<TrackedCodeProperty> trackedPropertiesViaCode = new();
         
         public enum TimeScaleOption { Scaled, Unscaled }
         [HideInInspector] public TimeScaleOption timeScaleOption = TimeScaleOption.Scaled;
@@ -33,7 +34,8 @@ namespace EasyLog.Core
         {
             // wait to ensure all code-based variables are registered
             //yield return new WaitForSeconds(0.1f);
-            yield return new WaitForEndOfFrame();
+            yield return null;
+            //yield return new WaitForEndOfFrame();
             Initialized = true;
             Tracker.StartCoroutine(TrackByInterval());
         }
@@ -66,11 +68,20 @@ namespace EasyLog.Core
                 return;
             }
             Debug.Log("START TRACKING: " + propertyName);
-            
-            if (_trackedPropertiesViaCode.ContainsKey(propertyName))
+
+            if (trackedPropertiesViaCode.Any(codeProperty => codeProperty.Name == propertyName || codeProperty.Accessor == propertyAccessor))
+            {
                 Debug.LogWarning("EasyLog: Cannot add \"" + propertyName + "\" because a property with the same name is already being tracked.");
-            else
-                _trackedPropertiesViaCode[propertyName] = () => Convert.ToString(propertyAccessor());
+                return;
+            }
+
+            var newCodeProperty = new TrackedCodeProperty
+            {
+                Accessor = propertyAccessor,
+                Name = propertyName
+            };
+            
+            trackedPropertiesViaCode.Add(newCodeProperty);
         }
         
         /// <summary>
@@ -87,8 +98,17 @@ namespace EasyLog.Core
             
             Debug.Log("STOP TRACKING: " + propertyName);
             
-            if (!_trackedPropertiesViaCode.Remove(propertyName))
+            if (trackedPropertiesViaCode.All(codeProperty => codeProperty.Name != propertyName))
+            {
                 Debug.LogWarning("EasyLog: Cannot find property \"" + propertyName + "\".");
+                return;
+            }
+
+            foreach (var prop in trackedPropertiesViaCode.Where(codeProperty => codeProperty.Name == propertyName))
+            {
+                trackedPropertiesViaCode.Remove(prop);
+                return;
+            }
         }
         
         /// <summary>
@@ -118,6 +138,9 @@ namespace EasyLog.Core
             CaptureValues();
         }
         
+        /// <summary>
+        /// Saves the log values to a file.
+        /// </summary>
         public void SaveDataToDisk()
         {
             if (Tracker.outputFormat == Tracker.OutputFormat.Influx)
@@ -128,9 +151,16 @@ namespace EasyLog.Core
         
         private void CaptureValues()
         {
-            foreach (var trackedVar in trackedPropertiesViaEditor)
+            for (int i = 0; i < trackedPropertiesViaEditor.Count; i++)
             {
-                if (trackedVar.component == null || string.IsNullOrEmpty(trackedVar.propertyName)) continue;
+                TrackedProperty trackedVar = trackedPropertiesViaEditor[i];
+                
+                if (trackedVar.component == null || string.IsNullOrEmpty(trackedVar.propertyName))
+                {
+                    Debug.LogWarning("EasyLog: " + "\"" + trackedVar.propertyName + "\"" + "cannot be found and will be removed from tracker.");
+                    trackedPropertiesViaEditor.Remove(trackedVar);
+                    continue;
+                }
                 
                 string value = "";
                 PropertyInfo propInfo = trackedVar.component.GetType().GetProperty(trackedVar.propertyName);
@@ -149,13 +179,20 @@ namespace EasyLog.Core
             }
 
             // add values tracked via code
-            foreach (var trackedVar in _trackedPropertiesViaCode)
+            foreach (var trackedVar in trackedPropertiesViaCode)
             {
-                string value = trackedVar.Value.Invoke();
+                if (trackedVar.Accessor == null)
+                {
+                    Debug.LogWarning("EasyLog: " + "\"" + trackedVar.Name + "\"" + "cannot be found and will be removed from tracker.");
+                    trackedPropertiesViaCode.Remove(trackedVar);
+                    continue;
+                }
+                
+                string value = trackedVar.Accessor.Invoke().ToString();
                 
                 Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", Tracker.SessionId} };
                 
-                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Key, value, newTags);
+                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Name, value, newTags);
                 DataSet.Add(newData);
             }
         }
@@ -176,7 +213,7 @@ namespace EasyLog.Core
         private string GetChannelFilePath()
         {
             string fileEnding = Tracker.outputFormat == Tracker.OutputFormat.Influx ? ".txt" : ".csv";
-            return $"{Tracker._filePath.Remove(Tracker._filePath.Length - 3)}_Channel{ChannelIndex}{fileEnding}";
+            return $"{Tracker.FilePath.Remove(Tracker.FilePath.Length - 4)}_Channel{ChannelIndex}{fileEnding}";
         }
     }
 }
