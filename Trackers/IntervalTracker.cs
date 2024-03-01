@@ -10,7 +10,7 @@ namespace EasyLog.Trackers
         public static IntervalTracker Current => _current;
         private static IntervalTracker _current;
         
-        [HideInInspector] public List<IntervalChannel> channels = new List<IntervalChannel>();
+        //[HideInInspector] public List<IntervalChannel> channels = new List<IntervalChannel>();
         
         private void Awake()
         {

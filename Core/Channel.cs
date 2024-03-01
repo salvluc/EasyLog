@@ -20,7 +20,6 @@ namespace EasyLog.Core
     
         protected DataSet DataSet = new();
         protected bool Initialized;
-        protected bool HasBeenStarted;
 
         protected string SessionId;
 
@@ -32,28 +31,62 @@ namespace EasyLog.Core
         }
         
         /// <summary>
-        /// Starts tracking the specified property in a new column.
+        /// Starts tracking the specified property.
         /// </summary>
         /// <param name="propertyAccessor">The property to track, has to be handed over as a Func: "() => property".</param>
         /// <param name="propertyName">The name the property will be saved under.</param>
-        public void AddNewProperty(Func<object> propertyAccessor, string propertyName)
+        public void StartTrackingProperty(Func<object> propertyAccessor, string propertyName)
         {
             if (!Initialized)
             {
                 Debug.LogWarning("EasyLog: You can not add properties before Start()! Add properties in the Inspector or in Start()!");
                 return;
             }
-            
-            if (HasBeenStarted)
-            {
-                Debug.LogWarning("EasyLog: You can not add new properties during runtime! Add properties in the Inspector or in Start()!");
-                return;
-            }
+            Debug.Log("START TRACKING: " + propertyName);
             
             if (_trackedPropertiesViaCode.ContainsKey(propertyName))
                 Debug.LogWarning("EasyLog: Cannot add \"" + propertyName + "\" because a property with the same name is already being tracked.");
             else
                 _trackedPropertiesViaCode[propertyName] = () => Convert.ToString(propertyAccessor());
+        }
+        
+        /// <summary>
+        /// Stops tracking the specified property.
+        /// </summary>
+        /// <param name="propertyName">The name of the property.</param>
+        public void StopTrackingProperty(string propertyName)
+        {
+            if (!Initialized)
+            {
+                Debug.LogWarning("EasyLog: You can not remove properties before Start()! Remove properties in the Inspector or in Start()!");
+                return;
+            }
+            
+            Debug.Log("STOP TRACKING: " + propertyName);
+            
+            if (!_trackedPropertiesViaCode.Remove(propertyName))
+                Debug.LogWarning("EasyLog: Cannot find property \"" + propertyName + "\".");
+        }
+        
+        /// <summary>
+        /// Manually logs a value.
+        /// </summary>
+        /// <param name="name">The name of the logged value.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="tags">The name of the logged value.</param>
+        public void Log(string name, string value, Dictionary<string, string> tags)
+        {
+            tags["sessionId"] = SessionId;
+            DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), name, value, tags);
+            DataSet.Add(newData);
+        }
+        
+        public void SaveDataToDisk()
+        {
+            if (ParentTracker.outputFormat == Tracker.OutputFormat.Influx)
+                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForInflux());
+            if (ParentTracker.outputFormat == Tracker.OutputFormat.CSV)
+                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForCSV(ParentTracker.delimiter, ParentTracker.delimiterReplacement));
         }
         
         protected void CaptureValues()
@@ -89,43 +122,23 @@ namespace EasyLog.Core
                 DataSet.Add(newData);
             }
         }
-
-        public void SaveDataToDisk()
-        {
-            if (ParentTracker.outputFormat == Tracker.OutputFormat.Influx)
-                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForInflux());
-            if (ParentTracker.outputFormat == Tracker.OutputFormat.CSV)
-                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForCSV(ParentTracker.delimiter, ParentTracker.delimiterReplacement));
-        }
         
         private string GetFormattedTime()
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
-            string formattedTime = string.Format("{0:D2}:{1:D2}:{2:D2}.{3:D}",
-                timeSpan.Hours,
-                timeSpan.Minutes,
-                timeSpan.Seconds,
-                timeSpan.Milliseconds);
-
+            string formattedTime = $"{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}.{timeSpan.Milliseconds:D}";
             return formattedTime;
         }
         
-        private string GetUnixTime()
+        private string GetUnixTime() // start date is 01-01-2024
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
             return ((long)Mathf.Floor((float)timeSpan.TotalSeconds) + 1704067200).ToString();
-        }
-        
-        private float GetUnformattedTime()
-        {
-            TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
-            return (float)timeSpan.TotalSeconds;
         }
 
         private string GetChannelFilePath()
         {
             string fileEnding = ParentTracker.outputFormat == Tracker.OutputFormat.Influx ? ".txt" : ".csv";
-            
             return $"{ParentTracker._filePath.Remove(ParentTracker._filePath.Length - 3)}_Channel{ChannelIndex}{fileEnding}";
         }
     }

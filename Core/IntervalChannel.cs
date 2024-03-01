@@ -26,7 +26,6 @@ namespace EasyLog.Core
         {
             // wait to ensure all code-based variables are registered
             yield return new WaitForSeconds(0.1f);
-            HasBeenStarted = true;
             
             if (startAutomatically)
                 ParentTracker.StartCoroutine(TrackByInterval());
@@ -36,8 +35,7 @@ namespace EasyLog.Core
         {
             while (true)
             {
-                if (_isPaused)
-                    continue;
+                if (_isPaused) continue;
                     
                 CaptureValues();
                 
