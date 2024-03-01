@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using EasyLog.Core;
-using EasyLog.Trackers;
 using UnityEditor;
 using UnityEngine;
 
@@ -32,14 +31,6 @@ namespace EasyLog.Editor
                 new GUIContent("File Prefix",
                     "The prefix of the saved file. The full file name will be:\nPrefix_dd-MM-yyyy_HH-mm_Suffix"),
                 tracker.filePrefix);
-
-            if (string.IsNullOrEmpty(tracker.fileSuffix))
-            {
-                if (tracker is IntervalTracker)
-                    tracker.fileSuffix = "Interval";
-                if (tracker is ManualTracker)
-                    tracker.fileSuffix = "Manual";
-            }
                 
             tracker.fileSuffix = EditorGUILayout.TextField(
                 new GUIContent("File Suffix",

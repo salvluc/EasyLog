@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -14,20 +15,42 @@ namespace EasyLog.Core
         
         public enum TimeScaleOption { Scaled, Unscaled }
         [HideInInspector] public TimeScaleOption timeScaleOption = TimeScaleOption.Scaled;
+        
+        public enum IntervalOption { Seconds, PerSecond }
+        [HideInInspector] public IntervalOption intervalOption = IntervalOption.Seconds;
+        
+        [HideInInspector] public int logInterval = 1;
 
-        public Tracker ParentTracker;
-        public int ChannelIndex;
+        [HideInInspector] public Tracker Tracker;
+        [HideInInspector] public int ChannelIndex;
     
-        protected DataSet DataSet = new();
-        protected bool Initialized;
-
-        protected string SessionId;
-
-        public virtual void Initialize()
+        private DataSet DataSet = new();
+        private bool Initialized;
+        
+        private float DelayBetweenLogs => intervalOption == IntervalOption.Seconds ? logInterval : 1f / logInterval;
+        
+        public IEnumerator InitializeLogging()
         {
-            SessionId = Guid.NewGuid().ToString("n");
-            
+            // wait to ensure all code-based variables are registered
+            //yield return new WaitForSeconds(0.1f);
+            yield return new WaitForEndOfFrame();
             Initialized = true;
+            Tracker.StartCoroutine(TrackByInterval());
+        }
+        
+        private IEnumerator TrackByInterval()
+        {
+            while (true)
+            {
+                if (logInterval == 0) continue;
+                    
+                CaptureValues();
+                
+                if (timeScaleOption == TimeScaleOption.Scaled)
+                    yield return new WaitForSeconds(DelayBetweenLogs);
+                else
+                    yield return new WaitForSecondsRealtime(DelayBetweenLogs);
+            }
         }
         
         /// <summary>
@@ -76,20 +99,34 @@ namespace EasyLog.Core
         /// <param name="tags">The name of the logged value.</param>
         public void Log(string name, string value, Dictionary<string, string> tags)
         {
-            tags["sessionId"] = SessionId;
+            tags["sessionId"] = Tracker.SessionId;
             DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), name, value, tags);
             DataSet.Add(newData);
         }
         
-        public void SaveDataToDisk()
+        /// <summary>
+        /// Logs the values of all tracked properties.
+        /// </summary>
+        public void LogAllTrackedProperties()
         {
-            if (ParentTracker.outputFormat == Tracker.OutputFormat.Influx)
-                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForInflux());
-            if (ParentTracker.outputFormat == Tracker.OutputFormat.CSV)
-                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForCSV(ParentTracker.delimiter, ParentTracker.delimiterReplacement));
+            if (!Initialized)
+            {
+                Debug.LogWarning("EasyLog: You can not log before Start()!");
+                return;
+            }
+            
+            CaptureValues();
         }
         
-        protected void CaptureValues()
+        public void SaveDataToDisk()
+        {
+            if (Tracker.outputFormat == Tracker.OutputFormat.Influx)
+                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForInflux());
+            if (Tracker.outputFormat == Tracker.OutputFormat.CSV)
+                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForCSV(Tracker.delimiter, Tracker.delimiterReplacement));
+        }
+        
+        private void CaptureValues()
         {
             foreach (var trackedVar in trackedPropertiesViaEditor)
             {
@@ -105,7 +142,7 @@ namespace EasyLog.Core
                 else if (fieldInfo != null)
                     value = fieldInfo.GetValue(trackedVar.component).ToString();
 
-                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", SessionId} };
+                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", Tracker.SessionId} };
                     
                 DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Name, value, newTags);
                 DataSet.Add(newData);
@@ -116,7 +153,7 @@ namespace EasyLog.Core
             {
                 string value = trackedVar.Value.Invoke();
                 
-                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", SessionId} };
+                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", Tracker.SessionId} };
                 
                 DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Key, value, newTags);
                 DataSet.Add(newData);
@@ -138,8 +175,8 @@ namespace EasyLog.Core
 
         private string GetChannelFilePath()
         {
-            string fileEnding = ParentTracker.outputFormat == Tracker.OutputFormat.Influx ? ".txt" : ".csv";
-            return $"{ParentTracker._filePath.Remove(ParentTracker._filePath.Length - 3)}_Channel{ChannelIndex}{fileEnding}";
+            string fileEnding = Tracker.outputFormat == Tracker.OutputFormat.Influx ? ".txt" : ".csv";
+            return $"{Tracker._filePath.Remove(Tracker._filePath.Length - 3)}_Channel{ChannelIndex}{fileEnding}";
         }
     }
 }
