@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EasyLog.Core;
 using EasyLog.Output;
 using UnityEditor;
@@ -13,6 +14,7 @@ namespace EasyLog.Editor
         private readonly OutputModuleEditor _outputModuleEditor = new();
         private readonly ChannelEditor _channelEditor = new();
 
+        public Dictionary<OutputModule, bool> OutputModuleFoldoutStates = new();
         private bool _showOutputModules = true;
         
         public override void OnInspectorGUI()
@@ -20,6 +22,8 @@ namespace EasyLog.Editor
             base.OnInspectorGUI();
             
             Tracker tracker = (Tracker)target;
+            
+            Color colorCache = GUI.backgroundColor;
 
             _trackerSettingsEditor.Draw(tracker);
             
@@ -34,33 +38,59 @@ namespace EasyLog.Editor
             {
                 for (int i = 0; i < tracker.outputModules.Count; i++)
                 {
+                    EditorGUILayout.Space(2);
+                    
+                    var outputModule = tracker.outputModules[i];
+                    
+                    OutputModuleFoldoutStates.TryAdd(outputModule, true);
+                    
                     EditorGUI.indentLevel++;
-                
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                
-                    _outputModuleEditor.Draw(tracker.outputModules[i]);
-
+                    EditorGUILayout.BeginHorizontal();
+                    
+                    // ensure the foldout title is on the left
+                    OutputModuleFoldoutStates[outputModule] = EditorGUILayout.Foldout(OutputModuleFoldoutStates[outputModule], outputModule.GetType().Name);
+                    
+                    GUILayout.FlexibleSpace();
                     if (tracker.outputModules.Count > 1)
                     {
-                        if (GUILayout.Button("Remove Module"))
+                        GUI.backgroundColor = StyleKit.RemoveColor;
+                        if (GUILayout.Button("x", GUILayout.Width(18), GUILayout.Height(18)))
                         {
-                            tracker.outputModules.Remove(tracker.outputModules[i]);
+                            OutputModuleFoldoutStates.Remove(outputModule);
+                            tracker.outputModules.Remove(outputModule);
+                            EditorGUILayout.EndHorizontal();
+                            continue;
                         }
+                        GUI.backgroundColor = colorCache;
                     }
-                
+                    EditorGUILayout.EndHorizontal();
+                    
+                    EditorGUILayout.Space(4);
+                    
+                    if (OutputModuleFoldoutStates[outputModule])
+                    {
+                        EditorGUI.indentLevel++;
+                        _outputModuleEditor.Draw(outputModule);
+                        EditorGUI.indentLevel--;
+                    }
+                    
                     EditorGUILayout.EndVertical();
-                
                     EditorGUI.indentLevel--;
                 }
 
-                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.Space(2);
                 
+                EditorGUILayout.BeginHorizontal();
+
+                GUI.backgroundColor = StyleKit.CsvColor;
                 if (GUILayout.Button("Add Influx Writer"))
                     tracker.outputModules.Add(new InfluxWriter());
                 if (GUILayout.Button("Add Influx Uploader"))
                     tracker.outputModules.Add(new InfluxUploader());
                 if (GUILayout.Button("Add CSV Writer"))
                     tracker.outputModules.Add(new CSVWriter());
+                GUI.backgroundColor = colorCache;
                 
                 EditorGUILayout.EndHorizontal();
             }

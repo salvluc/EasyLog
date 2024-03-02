@@ -9,14 +9,8 @@ namespace EasyLog.Editor
     [Serializable]
     public class OutputModuleEditor
     {
-        private readonly Dictionary<OutputModule, bool> _moduleFoldoutStates = new();
-        
         public void Draw(OutputModule module)
         {
-            _moduleFoldoutStates.TryAdd(module, true); // default state
-            _moduleFoldoutStates[module] = EditorGUILayout.Foldout(_moduleFoldoutStates[module], module.GetType().Name, EditorStyles.foldoutHeader);
-            if (!_moduleFoldoutStates[module]) return;
-            
             if (module is InfluxWriter influxWriter)
             {
                 influxWriter.filePrefix = EditorGUILayout.TextField(

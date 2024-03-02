@@ -23,6 +23,8 @@ namespace EasyLog.Editor
             if (!_trackedIntervalPropertiesFoldoutStates[channel])
                 return;
             
+            Color cachedColor = GUI.backgroundColor;
+            
             for (int i = 0; i < channel.trackedPropertiesViaEditor.Count; i++)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -86,18 +88,26 @@ namespace EasyLog.Editor
                     int newIndex = EditorGUILayout.Popup(currentIndex, propertiesAndFields.ToArray());
                     channel.trackedPropertiesViaEditor[i].propertyName = propertiesAndFields[newIndex];
                 }
-                    
+                
+                GUI.backgroundColor = StyleKit.RemoveColor;
+                
                 // REMOVE BUTTON
-                if (GUILayout.Button("Remove"))
+                if (GUILayout.Button("x"))
                     channel.trackedPropertiesViaEditor.RemoveAt(i);
+                
+                GUI.backgroundColor = cachedColor;
                     
                 EditorGUILayout.EndHorizontal();
 
                 EditorGUI.indentLevel = cachedIndent;
             }
+            
+            GUI.backgroundColor = StyleKit.CsvColor;
                 
             if (GUILayout.Button("Add Property"))
                 channel.trackedPropertiesViaEditor.Add(new TrackedEditorProperty());
+
+            GUI.backgroundColor = cachedColor;
         }
     }
 }
