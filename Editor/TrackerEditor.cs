@@ -1,4 +1,5 @@
 using EasyLog.Core;
+using EasyLog.Output;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,9 +9,11 @@ namespace EasyLog.Editor
     [CanEditMultipleObjects]
     public class TrackerEditor : UnityEditor.Editor
     {
-        private readonly TrackerSettingsEditor _trackerSettings = new();
-        private readonly OutputSettingsEditor _outputSettings = new();
-        private readonly ChannelEditor _channel = new();
+        private readonly TrackerSettingsEditor _trackerSettingsEditor = new();
+        private readonly OutputModuleEditor _outputModuleEditor = new();
+        private readonly ChannelEditor _channelEditor = new();
+
+        private bool _showOutputModules = true;
         
         public override void OnInspectorGUI()
         {
@@ -18,11 +21,49 @@ namespace EasyLog.Editor
             
             Tracker tracker = (Tracker)target;
 
-            _trackerSettings.Draw(tracker);
+            _trackerSettingsEditor.Draw(tracker);
             
             EditorGUILayout.Space();
             
-            _outputSettings.Draw(tracker);
+            _showOutputModules = EditorGUILayout.Foldout(_showOutputModules, "Output Modules", EditorStyles.foldoutHeader);
+            
+            if (tracker.outputModules.Count == 0)
+                tracker.outputModules.Add(new InfluxWriter());
+
+            if (_showOutputModules)
+            {
+                for (int i = 0; i < tracker.outputModules.Count; i++)
+                {
+                    EditorGUI.indentLevel++;
+                
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                
+                    _outputModuleEditor.Draw(tracker.outputModules[i]);
+
+                    if (tracker.outputModules.Count > 1)
+                    {
+                        if (GUILayout.Button("Remove Module"))
+                        {
+                            tracker.outputModules.Remove(tracker.outputModules[i]);
+                        }
+                    }
+                
+                    EditorGUILayout.EndVertical();
+                
+                    EditorGUI.indentLevel--;
+                }
+
+                EditorGUILayout.BeginHorizontal();
+                
+                if (GUILayout.Button("Add Influx Writer"))
+                    tracker.outputModules.Add(new InfluxWriter());
+                if (GUILayout.Button("Add Influx Uploader"))
+                    tracker.outputModules.Add(new InfluxUploader());
+                if (GUILayout.Button("Add CSV Writer"))
+                    tracker.outputModules.Add(new CSVWriter());
+                
+                EditorGUILayout.EndHorizontal();
+            }
             
             EditorGUILayout.Space();
             
@@ -37,7 +78,7 @@ namespace EasyLog.Editor
                 
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 
-                    _channel.Draw(tracker.GetChannel(i));
+                    _channelEditor.Draw(tracker.GetChannel(i));
 
                     if (tracker.ChannelCount > 1)
                     {
@@ -58,7 +99,7 @@ namespace EasyLog.Editor
             }
             else
             {
-                _channel.Draw(tracker.GetChannel(), true);
+                _channelEditor.Draw(tracker.GetChannel(), true);
             }
             
             // save changes

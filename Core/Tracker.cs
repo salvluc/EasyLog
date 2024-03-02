@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using EasyLog.Output;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace EasyLog.Core
 {
@@ -9,23 +10,14 @@ namespace EasyLog.Core
     public class Tracker : MonoBehaviour
     {
         [HideInInspector] public List<Channel> channels = new();
+        [HideInInspector] [SerializeReference] public List<OutputModule> outputModules = new();
         
         public static Tracker Current { get; private set; }
         public int ChannelCount => channels.Count;
         public string SessionId { get; private set; }
-        public string FilePath { get; private set; }
         
         public enum TrackerMode { Simple, MultiChannel }
         [HideInInspector] public TrackerMode trackerMode = TrackerMode.Simple;
-        
-        public enum OutputFormat { Influx, CSV }
-        [HideInInspector] public OutputFormat outputFormat = OutputFormat.Influx;
-        
-        [HideInInspector] public string filePrefix = "Log_";
-        [HideInInspector] public string fileSuffix;
-        [HideInInspector] public string saveLocation = Application.dataPath;
-        [HideInInspector] public char delimiter = ',';
-        [HideInInspector] public char delimiterReplacement = '.';
         
         private void Awake()
         {
@@ -57,11 +49,6 @@ namespace EasyLog.Core
         
         private void Initialize()
         {
-            string formattedDateTime = DateTime.Now.ToString("dd-MM-yyyy_HH-mm");
-            string fileName = $"{filePrefix}{formattedDateTime}{fileSuffix}.csv";
-
-            FilePath = Path.Combine(saveLocation, fileName);
-            
             SessionId = Guid.NewGuid().ToString("n");
         }
         
@@ -82,12 +69,13 @@ namespace EasyLog.Core
 
         private void OnApplicationQuit()
         {
-            foreach (Channel channel in channels)
+            foreach (var outputModule in outputModules)
             {
-                channel.SaveDataToDisk();
+                foreach (Channel channel in channels)
+                {
+                    outputModule.OnOutputRequested(outputModule.RequiredDataType == "CSV" ? channel.DataSet.SerializeForCSV() : channel.DataSet.SerializeForInflux());
+                }
             }
-            
-            Debug.Log("Interval Tracker: Successfully saved log(s) at: " + saveLocation);
         }
     }
 }

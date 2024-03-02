@@ -27,7 +27,7 @@ namespace EasyLog.Core
             return data;
         }
 
-        public string SerializeForCSV(char delimiter, char delimiterReplacement)
+        public string SerializeForCSV(char delimiter = ',', char delimiterReplacement = '.')
         {
             string data = string.Empty;
         

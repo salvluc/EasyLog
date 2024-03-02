@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -11,7 +10,7 @@ namespace EasyLog.Core
     [Serializable]
     public class Channel
     {
-        [HideInInspector] public List<TrackedProperty> trackedPropertiesViaEditor = new();
+        [HideInInspector] public List<TrackedEditorProperty> trackedPropertiesViaEditor = new();
         [HideInInspector] public List<TrackedCodeProperty> trackedPropertiesViaCode = new();
         
         public enum TimeScaleOption { Scaled, Unscaled }
@@ -25,7 +24,7 @@ namespace EasyLog.Core
         [HideInInspector] public Tracker Tracker;
         [HideInInspector] public int ChannelIndex;
     
-        private DataSet DataSet = new();
+        public DataSet DataSet { get; private set; } = new();
         private bool Initialized;
         
         private float DelayBetweenLogs => intervalOption == IntervalOption.Seconds ? logInterval : 1f / logInterval;
@@ -138,43 +137,32 @@ namespace EasyLog.Core
             CaptureValues();
         }
         
-        /// <summary>
-        /// Saves the log values to a file.
-        /// </summary>
-        public void SaveDataToDisk()
-        {
-            if (Tracker.outputFormat == Tracker.OutputFormat.Influx)
-                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForInflux());
-            if (Tracker.outputFormat == Tracker.OutputFormat.CSV)
-                File.WriteAllText(GetChannelFilePath(), DataSet.SerializeForCSV(Tracker.delimiter, Tracker.delimiterReplacement));
-        }
-        
         private void CaptureValues()
         {
             for (int i = 0; i < trackedPropertiesViaEditor.Count; i++)
             {
-                TrackedProperty trackedVar = trackedPropertiesViaEditor[i];
+                TrackedEditorProperty trackedEditorVar = trackedPropertiesViaEditor[i];
                 
-                if (trackedVar.component == null || string.IsNullOrEmpty(trackedVar.propertyName))
+                if (trackedEditorVar.component == null || string.IsNullOrEmpty(trackedEditorVar.propertyName))
                 {
-                    Debug.LogWarning("EasyLog: " + "\"" + trackedVar.propertyName + "\"" + "cannot be found and will be removed from tracker.");
-                    trackedPropertiesViaEditor.Remove(trackedVar);
+                    Debug.LogWarning("EasyLog: " + "\"" + trackedEditorVar.propertyName + "\"" + "cannot be found and will be removed from tracker.");
+                    trackedPropertiesViaEditor.Remove(trackedEditorVar);
                     continue;
                 }
                 
                 string value = "";
-                PropertyInfo propInfo = trackedVar.component.GetType().GetProperty(trackedVar.propertyName);
-                FieldInfo fieldInfo = trackedVar.component.GetType().GetField(trackedVar.propertyName);
+                PropertyInfo propInfo = trackedEditorVar.component.GetType().GetProperty(trackedEditorVar.propertyName);
+                FieldInfo fieldInfo = trackedEditorVar.component.GetType().GetField(trackedEditorVar.propertyName);
                     
                 if (propInfo != null)
-                    value = propInfo.GetValue(trackedVar.component, null).ToString();
+                    value = propInfo.GetValue(trackedEditorVar.component, null).ToString();
 
                 else if (fieldInfo != null)
-                    value = fieldInfo.GetValue(trackedVar.component).ToString();
+                    value = fieldInfo.GetValue(trackedEditorVar.component).ToString();
 
                 Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", Tracker.SessionId} };
                     
-                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Name, value, newTags);
+                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedEditorVar.Name, value, newTags);
                 DataSet.Add(newData);
             }
 
@@ -208,12 +196,6 @@ namespace EasyLog.Core
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
             return ((long)Mathf.Floor((float)timeSpan.TotalSeconds) + 1704067200).ToString();
-        }
-
-        private string GetChannelFilePath()
-        {
-            string fileEnding = Tracker.outputFormat == Tracker.OutputFormat.Influx ? ".txt" : ".csv";
-            return $"{Tracker.FilePath.Remove(Tracker.FilePath.Length - 4)}_Channel{ChannelIndex}{fileEnding}";
         }
     }
 }

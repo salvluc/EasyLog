@@ -4,7 +4,7 @@ using UnityEngine;
 namespace EasyLog.Core
 {
     [Serializable]
-    public class TrackedProperty
+    public class TrackedEditorProperty
     {
         public Component component;
         public string propertyName;

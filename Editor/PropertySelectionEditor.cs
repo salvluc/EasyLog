@@ -13,7 +13,7 @@ namespace EasyLog.Editor
     {
         private readonly Dictionary<Channel, bool> _trackedIntervalPropertiesFoldoutStates = new();
         
-        public void DrawInterval(Channel channel)
+        public void Draw(Channel channel)
         {
             _trackedIntervalPropertiesFoldoutStates.TryAdd(channel, true); // Default state
             
@@ -97,7 +97,7 @@ namespace EasyLog.Editor
             }
                 
             if (GUILayout.Button("Add Property"))
-                channel.trackedPropertiesViaEditor.Add(new TrackedProperty());
+                channel.trackedPropertiesViaEditor.Add(new TrackedEditorProperty());
         }
     }
 }
