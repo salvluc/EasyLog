@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace EasyLog.Core
+namespace EasyLog
 {
     public class DataSet
     {

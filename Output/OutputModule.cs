@@ -1,6 +1,6 @@
 using System;
 
-namespace EasyLog.Output
+namespace EasyLog
 {
     [Serializable]
     public abstract class OutputModule

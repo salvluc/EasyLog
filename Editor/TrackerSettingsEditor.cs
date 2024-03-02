@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using EasyLog.Core;
 using UnityEditor;
 using UnityEngine;
 

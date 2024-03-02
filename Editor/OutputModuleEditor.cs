@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using EasyLog.Output;
 using UnityEditor;
 using UnityEngine;
 

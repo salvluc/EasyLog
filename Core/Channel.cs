@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace EasyLog.Core
+namespace EasyLog
 {
     [Serializable]
     public class Channel

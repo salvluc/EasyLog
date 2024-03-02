@@ -3,7 +3,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace EasyLog.Output
+namespace EasyLog
 {
     [Serializable]
     public class InfluxUploader : OutputModule

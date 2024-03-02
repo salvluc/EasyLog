@@ -1,7 +1,5 @@
-using System.Collections.Generic;
-using EasyLog.Core;
-using EasyLog.Output;
 using UnityEditor;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace EasyLog.Editor
@@ -14,7 +12,7 @@ namespace EasyLog.Editor
         private readonly OutputModuleEditor _outputModuleEditor = new();
         private readonly ChannelEditor _channelEditor = new();
 
-        public Dictionary<OutputModule, bool> OutputModuleFoldoutStates = new();
+        private readonly Dictionary<OutputModule, bool> _outputModuleFoldoutStates = new();
         private bool _showOutputModules = true;
         
         public override void OnInspectorGUI()
@@ -42,14 +40,14 @@ namespace EasyLog.Editor
                     
                     var outputModule = tracker.outputModules[i];
                     
-                    OutputModuleFoldoutStates.TryAdd(outputModule, true);
+                    _outputModuleFoldoutStates.TryAdd(outputModule, true);
                     
                     EditorGUI.indentLevel++;
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                     EditorGUILayout.BeginHorizontal();
                     
                     // ensure the foldout title is on the left
-                    OutputModuleFoldoutStates[outputModule] = EditorGUILayout.Foldout(OutputModuleFoldoutStates[outputModule], outputModule.GetType().Name);
+                    _outputModuleFoldoutStates[outputModule] = EditorGUILayout.Foldout(_outputModuleFoldoutStates[outputModule], outputModule.GetType().Name);
                     
                     GUILayout.FlexibleSpace();
                     if (tracker.outputModules.Count > 1)
@@ -57,7 +55,7 @@ namespace EasyLog.Editor
                         GUI.backgroundColor = StyleKit.RemoveColor;
                         if (GUILayout.Button("x", GUILayout.Width(18), GUILayout.Height(18)))
                         {
-                            OutputModuleFoldoutStates.Remove(outputModule);
+                            _outputModuleFoldoutStates.Remove(outputModule);
                             tracker.outputModules.Remove(outputModule);
                             EditorGUILayout.EndHorizontal();
                             continue;
@@ -68,7 +66,7 @@ namespace EasyLog.Editor
                     
                     EditorGUILayout.Space(4);
                     
-                    if (OutputModuleFoldoutStates[outputModule])
+                    if (_outputModuleFoldoutStates[outputModule])
                     {
                         EditorGUI.indentLevel++;
                         _outputModuleEditor.Draw(outputModule);

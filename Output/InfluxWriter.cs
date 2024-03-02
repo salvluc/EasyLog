@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using UnityEngine;
 
-namespace EasyLog.Output
+namespace EasyLog
 {
     [Serializable]
     public class InfluxWriter : OutputModule

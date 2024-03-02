@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace EasyLog.Core
+namespace EasyLog
 {
     public readonly struct DataPoint
     {

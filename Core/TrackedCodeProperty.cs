@@ -1,6 +1,6 @@
 using System;
 
-namespace EasyLog.Core
+namespace EasyLog
 {
     public class TrackedCodeProperty
     {

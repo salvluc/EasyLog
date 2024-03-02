@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace EasyLog.Core
+namespace EasyLog
 {
     [Serializable]
     public class TrackedEditorProperty

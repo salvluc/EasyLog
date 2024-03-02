@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using EasyLog.Output;
 using UnityEngine;
-using UnityEngine.Serialization;
 
-namespace EasyLog.Core
+namespace EasyLog
 {
     [AddComponentMenu("EasyLog/Tracker")]
     public class Tracker : MonoBehaviour
