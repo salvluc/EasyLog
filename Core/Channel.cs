@@ -1,136 +1,199 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Reflection;
-using System.Text;
 using UnityEngine;
 
-namespace EasyLog.Core
+namespace EasyLog
 {
     [Serializable]
     public class Channel
     {
-        [HideInInspector] public List<TrackedProperty> trackedPropertiesViaEditor = new List<TrackedProperty>();
-        private Dictionary<string, Func<string>> _trackedPropertiesViaCode = new Dictionary<string, Func<string>>();
+        public DataSet DataSet { get; private set; } = new();
+        
+        [HideInInspector] public List<TrackedEditorProperty> trackedPropertiesViaEditor = new();
+        [HideInInspector] public List<TrackedCodeProperty> trackedPropertiesViaCode = new();
         
         public enum TimeScaleOption { Scaled, Unscaled }
         [HideInInspector] public TimeScaleOption timeScaleOption = TimeScaleOption.Scaled;
-
-        public Tracker ParentTracker;
-
-        public int ChannelIndex = 0;
         
-        protected bool _initialized;
+        public enum IntervalOption { Seconds, PerSecond }
+        [HideInInspector] public IntervalOption intervalOption = IntervalOption.Seconds;
         
-        protected bool _hasBeenStarted;
+        [HideInInspector] public int logInterval = 1;
+
+        [HideInInspector] public Tracker Tracker;
+        [HideInInspector] public int ChannelIndex;
+        
+        private float DelayBetweenLogs => intervalOption == IntervalOption.Seconds ? logInterval : 1f / logInterval;
+        
+        private bool _initialized;
+        
+        public IEnumerator InitializeLogging()
+        {
+            yield return null; // wait to ensure all code-based variables are registered
+            _initialized = true;
+            Tracker.StartCoroutine(TrackByInterval());
+        }
+        
+        private IEnumerator TrackByInterval()
+        {
+            while (true)
+            {
+                if (logInterval == 0) continue;
+                    
+                CaptureValues();
+                
+                if (timeScaleOption == TimeScaleOption.Scaled)
+                    yield return new WaitForSeconds(DelayBetweenLogs);
+                else
+                    yield return new WaitForSecondsRealtime(DelayBetweenLogs);
+            }
+        }
         
         /// <summary>
-        /// Starts tracking the specified property in a new column.
+        /// Starts tracking the specified property.
         /// </summary>
         /// <param name="propertyAccessor">The property to track, has to be handed over as a Func: "() => property".</param>
         /// <param name="propertyName">The name the property will be saved under.</param>
-        public void AddNewProperty(Func<object> propertyAccessor, string propertyName)
+        public void StartTrackingProperty(Func<object> propertyAccessor, string propertyName)
         {
             if (!_initialized)
             {
                 Debug.LogWarning("EasyLog: You can not add properties before Start()! Add properties in the Inspector or in Start()!");
                 return;
             }
-            
-            if (_hasBeenStarted)
+            Debug.Log("START TRACKING: " + propertyName);
+
+            if (trackedPropertiesViaCode.Any(codeProperty => codeProperty.Name == propertyName || codeProperty.Accessor == propertyAccessor))
             {
-                Debug.LogWarning("EasyLog: You can not add new properties during runtime! Add properties in the Inspector or in Start()!");
+                Debug.LogWarning("EasyLog: Cannot add \"" + propertyName + "\" because a property with the same name is already being tracked.");
+                return;
+            }
+
+            var newCodeProperty = new TrackedCodeProperty
+            {
+                Accessor = propertyAccessor,
+                Name = propertyName
+            };
+            
+            trackedPropertiesViaCode.Add(newCodeProperty);
+        }
+        
+        /// <summary>
+        /// Stops tracking the specified property.
+        /// </summary>
+        /// <param name="propertyName">The name of the property.</param>
+        public void StopTrackingProperty(string propertyName)
+        {
+            if (!_initialized)
+            {
+                Debug.LogWarning("EasyLog: You can not remove properties before Start()! Remove properties in the Inspector or in Start()!");
                 return;
             }
             
-            if (_trackedPropertiesViaCode.ContainsKey(propertyName))
-                Debug.LogWarning("EasyLog: Cannot add \"" + propertyName + "\" because a property with the same name is already being tracked.");
-            else
-                _trackedPropertiesViaCode[propertyName] = () => Convert.ToString(propertyAccessor());
-        }
-        
-        protected void WriteHeaders()
-        {
-            List<string> headers = new List<string>();
-
-            headers.Add("Time");
-
-            // add headers from inspector-based properties
-            foreach (var trackedVar in trackedPropertiesViaEditor)
+            Debug.Log("STOP TRACKING: " + propertyName);
+            
+            if (trackedPropertiesViaCode.All(codeProperty => codeProperty.Name != propertyName))
             {
-                headers.Add(trackedVar.component.gameObject.name + " " + trackedVar.component.GetType().Name + " " + trackedVar.propertyName);
+                Debug.LogWarning("EasyLog: Cannot find property \"" + propertyName + "\".");
+                return;
             }
 
-            // add headers from code-based properties
-            headers.AddRange(_trackedPropertiesViaCode.Keys);
-
-            string headerLine = string.Join(",", headers);
-            File.WriteAllText(GetChannelFilePath(), headerLine + Environment.NewLine);
+            foreach (var prop in trackedPropertiesViaCode.Where(codeProperty => codeProperty.Name == propertyName))
+            {
+                trackedPropertiesViaCode.Remove(prop);
+                return;
+            }
         }
         
-        protected void WriteValues()
+        /// <summary>
+        /// Manually logs a value.
+        /// </summary>
+        /// <param name="name">The name of the logged value.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="tags">The name of the logged value.</param>
+        public void Log(string name, string value, Dictionary<string, string> tags)
         {
-            StringBuilder logLine = new StringBuilder();
-
-            logLine.Append(GetFormattedTime() + ParentTracker.delimiter);
-
-            // add values tracked via inspector
-            foreach (var trackedVar in trackedPropertiesViaEditor)
+            tags["sessionId"] = Tracker.SessionId;
+            DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), name, value, tags);
+            DataSet.Add(newData);
+        }
+        
+        /// <summary>
+        /// Logs the values of all tracked properties.
+        /// </summary>
+        public void LogAllTrackedProperties()
+        {
+            if (!_initialized)
             {
-                if (trackedVar.component != null && !string.IsNullOrEmpty(trackedVar.propertyName))
+                Debug.LogWarning("EasyLog: You can not log before Start()!");
+                return;
+            }
+            
+            CaptureValues();
+        }
+        
+        private void CaptureValues()
+        {
+            for (int i = 0; i < trackedPropertiesViaEditor.Count; i++)
+            {
+                TrackedEditorProperty trackedEditorVar = trackedPropertiesViaEditor[i];
+                
+                if (trackedEditorVar.component == null || string.IsNullOrEmpty(trackedEditorVar.propertyName))
                 {
-                    PropertyInfo propInfo = trackedVar.component.GetType().GetProperty(trackedVar.propertyName);
-                    FieldInfo fieldInfo = trackedVar.component.GetType().GetField(trackedVar.propertyName);
-
-                    string value = "";
-
-                    if (propInfo != null)
-                        value = propInfo.GetValue(trackedVar.component, null).ToString();
-
-                    else if (fieldInfo != null)
-                        value = fieldInfo.GetValue(trackedVar.component).ToString();
-
-                    // replace commas with dots to prevent delimiter issues
-                    value = value.Replace(ParentTracker.delimiter, ParentTracker.delimiterReplacement);
-
-                    logLine.Append(value + ",");
+                    Debug.LogWarning("EasyLog: " + "\"" + trackedEditorVar.propertyName + "\"" + "cannot be found and will be removed from tracker.");
+                    trackedPropertiesViaEditor.Remove(trackedEditorVar);
+                    continue;
                 }
+                
+                string value = "";
+                PropertyInfo propInfo = trackedEditorVar.component.GetType().GetProperty(trackedEditorVar.propertyName);
+                FieldInfo fieldInfo = trackedEditorVar.component.GetType().GetField(trackedEditorVar.propertyName);
+                    
+                if (propInfo != null)
+                    value = propInfo.GetValue(trackedEditorVar.component, null).ToString();
+
+                else if (fieldInfo != null)
+                    value = fieldInfo.GetValue(trackedEditorVar.component).ToString();
+
+                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", Tracker.SessionId} };
+                    
+                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedEditorVar.Name, value, newTags);
+                DataSet.Add(newData);
             }
 
             // add values tracked via code
-            foreach (var func in _trackedPropertiesViaCode.Values)
+            foreach (var trackedVar in trackedPropertiesViaCode)
             {
-                string value = func.Invoke();
+                if (trackedVar.Accessor == null)
+                {
+                    Debug.LogWarning("EasyLog: " + "\"" + trackedVar.Name + "\"" + "cannot be found and will be removed from tracker.");
+                    trackedPropertiesViaCode.Remove(trackedVar);
+                    continue;
+                }
                 
-                // replace commas with dots to prevent delimiter issues
-                value = value.Replace(ParentTracker.delimiter, ParentTracker.delimiterReplacement);
+                string value = trackedVar.Accessor.Invoke().ToString();
                 
-                logLine.Append(value + ParentTracker.delimiter);
+                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", Tracker.SessionId} };
+                
+                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Name, value, newTags);
+                DataSet.Add(newData);
             }
-
-            // remove last delimiter
-            if (logLine.Length > 0)
-                logLine.Length--;
-
-            // write to .csv file
-            File.AppendAllText(GetChannelFilePath(), logLine + Environment.NewLine);
         }
         
         private string GetFormattedTime()
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
-            string formattedTime = string.Format("{0:D2}:{1:D2}:{2:D2}.{3:D}",
-                timeSpan.Hours,
-                timeSpan.Minutes,
-                timeSpan.Seconds,
-                timeSpan.Milliseconds);
-
+            string formattedTime = $"{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}.{timeSpan.Milliseconds:D}";
             return formattedTime;
         }
-
-        private string GetChannelFilePath()
+        
+        private string GetUnixTime() // start date is 01-01-2024 1:00
         {
-            return $"{ParentTracker._filePath.Remove(ParentTracker._filePath.Length - 3)}_Channel{ChannelIndex}.csv";
+            TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
+            return ((long)Mathf.Floor((float)timeSpan.TotalSeconds) + 1704067200).ToString();
         }
     }
 }

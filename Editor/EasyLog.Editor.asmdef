@@ -1,8 +1,8 @@
 {
-    "name": "EasyLog",
+    "name": "EasyLog.Editor",
     "rootNamespace": "",
-    "references": [],
-    "includePlatforms": [],
+    "references": ["GUID:070dd8f3d77359246b61cffba65dcdb2"],
+    "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
