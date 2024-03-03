@@ -14,19 +14,18 @@ namespace EasyLog.Editor
         {
             _showSettings = EditorGUILayout.Foldout(_showSettings, new GUIContent("Tracker Settings"), EditorStyles.foldoutHeader);
 
-            if (_showSettings)
-            {
-                EditorGUI.indentLevel++;
+            if (!_showSettings) return;
+            
+            EditorGUI.indentLevel++;
                 
-                var trackModes = Enum.GetValues(typeof(Tracker.TrackerMode)).Cast<Tracker.TrackerMode>().ToArray();
-                int trackMode = EditorGUILayout.Popup(
-                    new GUIContent("Tracker Mode"),
-                    (int)tracker.trackerMode,
-                    trackModes.Select(e => e.ToString()).ToArray());
-                tracker.trackerMode = (Tracker.TrackerMode)trackMode;
+            var trackModes = Enum.GetValues(typeof(Tracker.TrackerMode)).Cast<Tracker.TrackerMode>().ToArray();
+            int trackMode = EditorGUILayout.Popup(
+                new GUIContent("Tracker Mode"),
+                (int)tracker.trackerMode,
+                trackModes.Select(e => e.ToString()).ToArray());
+            tracker.trackerMode = (Tracker.TrackerMode)trackMode;
                 
-                EditorGUI.indentLevel--;
-            }
+            EditorGUI.indentLevel--;
         }
     }
 }

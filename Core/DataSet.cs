@@ -27,15 +27,13 @@ namespace EasyLog
             return data;
         }
 
-        public string SerializeForCSV(char delimiter = ',', char delimiterReplacement = '.')
+        public string SerializeForCsv(char delimiter = ',', char delimiterReplacement = '.')
         {
             string data = string.Empty;
         
             foreach (var dataPoint in _data)
             {
-                data += $"{dataPoint.Time.ToString().Replace(delimiter, delimiterReplacement)}" +
-                        $"{delimiter}{dataPoint.MeasurementName.Replace(delimiter, delimiterReplacement)}" +
-                        $"{delimiter}{dataPoint.Value.Replace(delimiter, delimiterReplacement)}\n";
+                data += $"{dataPoint.SerializeForCsv(delimiter, delimiterReplacement)}\n";
             }
 
             return data;

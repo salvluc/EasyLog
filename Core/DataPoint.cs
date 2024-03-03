@@ -28,6 +28,13 @@ namespace EasyLog
                    $" {InfluxFormat(Time)}";
         }
         
+        public string SerializeForCsv(char delimiter, char delimiterReplacement)
+        {
+            return $"measurement={MeasurementName.Replace(delimiter, delimiterReplacement)},{SerializeTags(Tags)}," +
+                   $"{ValueName.Replace(delimiter, delimiterReplacement)}={Value.Replace(delimiter, delimiterReplacement)}," +
+                   $"{Time.Replace(delimiter, delimiterReplacement)}";
+        }
+        
         private static string InfluxFormat(string input)
         {
             input = input.Replace(",", ".");

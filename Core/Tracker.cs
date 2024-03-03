@@ -71,7 +71,13 @@ namespace EasyLog
             {
                 foreach (Channel channel in channels)
                 {
-                    outputModule.OnOutputRequested(outputModule.RequiredDataType == "CSV" ? channel.DataSet.SerializeForCSV() : channel.DataSet.SerializeForInflux());
+                    if (outputModule is CSVWriter csvWriter)
+                    {
+                        csvWriter.OnOutputRequested(channel.DataSet.SerializeForCsv(csvWriter.delimiter, csvWriter.delimiterReplacement));
+                        continue;
+                    }
+                    
+                    outputModule.OnOutputRequested(channel.DataSet.SerializeForInflux()); // needs to be changed when more csv output modules are added
                 }
             }
         }

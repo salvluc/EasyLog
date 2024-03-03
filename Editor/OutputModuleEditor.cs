@@ -50,6 +50,22 @@ namespace EasyLog.Editor
                     new GUIContent("File Suffix",
                         "The suffix of the saved .csv file. The full file name will be:\nPrefix_dd-MM-yyyy_HH-mm_Suffix"),
                     csvWriter.fileSuffix);
+                
+                string delimiter = EditorGUILayout.TextField(
+                    new GUIContent("Delimiter",
+                        "The delimiter used to separate the values"),
+                    csvWriter.delimiter.ToString());
+                
+                if (!string.IsNullOrEmpty(delimiter))
+                    csvWriter.delimiter = StyleKit.StringToChar(delimiter);
+                
+                string delimiterReplacement = EditorGUILayout.TextField(
+                    new GUIContent("Delimiter Replacement",
+                        "If the delimiter is part of a tracked value, it will be replaced with this to keep columns separated"),
+                    csvWriter.delimiterReplacement.ToString());
+                
+                if (!string.IsNullOrEmpty(delimiterReplacement))
+                    csvWriter.delimiterReplacement = StyleKit.StringToChar(delimiterReplacement);
 
                 EditorGUILayout.BeginHorizontal();
 

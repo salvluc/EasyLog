@@ -42,12 +42,12 @@ namespace EasyLog.Editor
                     
                     _outputModuleFoldoutStates.TryAdd(outputModule, true);
                     
-                    EditorGUI.indentLevel++;
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                     EditorGUILayout.BeginHorizontal();
                     
                     // ensure the foldout title is on the left
-                    _outputModuleFoldoutStates[outputModule] = EditorGUILayout.Foldout(_outputModuleFoldoutStates[outputModule], outputModule.GetType().Name);
+                    //_outputModuleFoldoutStates[outputModule] = EditorGUILayout.Foldout(_outputModuleFoldoutStates[outputModule], outputModule.GetType().Name);
+                    EditorGUILayout.LabelField(outputModule.GetType().Name, EditorStyles.boldLabel);
                     
                     GUILayout.FlexibleSpace();
                     if (tracker.outputModules.Count > 1)
@@ -58,6 +58,7 @@ namespace EasyLog.Editor
                             _outputModuleFoldoutStates.Remove(outputModule);
                             tracker.outputModules.Remove(outputModule);
                             EditorGUILayout.EndHorizontal();
+                            EditorGUILayout.EndVertical();
                             continue;
                         }
                         GUI.backgroundColor = colorCache;
@@ -73,10 +74,9 @@ namespace EasyLog.Editor
                         EditorGUI.indentLevel--;
                     }
                     
+                    EditorGUILayout.Space(1);
                     EditorGUILayout.EndVertical();
-                    EditorGUI.indentLevel--;
                 }
-
                 EditorGUILayout.Space(2);
                 
                 EditorGUILayout.BeginHorizontal();
