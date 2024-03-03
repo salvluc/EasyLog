@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Text;
-using UnityEngine;
 using UnityEngine.Networking;
+using SimpleJSON;
+using Debug = UnityEngine.Debug;
 
 namespace EasyLog
 {
@@ -10,7 +12,7 @@ namespace EasyLog
     {
         public string url = "http://localhost:8086";
         public string org = "yourOrg";
-        public string bucket = "bucket";
+        public string bucket = "yourBucket";
         public string apiToken = "yourAuthToken";
 
         public override string RequiredDataType { get; protected set; } = "INFLUX";
@@ -26,26 +28,130 @@ namespace EasyLog
                 uploadHandler = new UploadHandlerRaw(byteData),
                 downloadHandler = new DownloadHandlerBuffer()
             };
-        
+
             request.SetRequestHeader("Authorization", "Token " + apiToken);
             request.SetRequestHeader("Content-Type", "text/plain");
-
-            // Send the request and wait for the response
             request.SendWebRequest();
+            
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            const float timeout = 10f;
 
             while (!request.isDone)
             {
-                // Optionally, add a timeout to prevent hanging in case of network issues
+                if (!(stopwatch.ElapsedMilliseconds > timeout * 1000)) continue;
+                
+                Debug.LogError("EasyLog: InfluxDB connection timeout.");
+                break;
             }
+            
+            stopwatch.Stop();
+            
+            if (!request.isDone) return;
 
             if (request.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError("EasyLog: Influx upload failed: " + request.error);
+                Debug.LogError("EasyLog: InfluxDB upload failed: " + request.error);
             }
             else
             {
-                Debug.Log("EasyLog: Influx upload successful: " + request.downloadHandler.text);
+                Debug.Log("EasyLog: InfluxDB upload successful: " + request.downloadHandler.text);
             }
+        }
+        
+        public void TestConnection()
+        {
+            string bucketsEndpoint = url + "/api/v2/buckets?org=" + org;
+
+            UnityWebRequest request = UnityWebRequest.Get(bucketsEndpoint);
+            request.SetRequestHeader("Authorization", "Token " + apiToken);
+            request.SendWebRequest();
+            
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            const float timeout = 10f;
+
+            while (!request.isDone)
+            {
+                if (!(stopwatch.ElapsedMilliseconds > timeout * 1000)) continue;
+                
+                Debug.LogError("EasyLog: InfluxDB connection timeout.");
+                break;
+            }
+            
+            stopwatch.Stop();
+
+            if (!request.isDone) return;
+            
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError("EasyLog: InfluxDB connection failed: " + request.error);
+            }
+            else
+            {
+                Debug.Log("EasyLog: InfluxDB connection successful!");
+            }
+        }
+        
+        public void TestBucket()
+        {
+            string bucketsEndpoint = $"{url}/api/v2/buckets?org={org}";
+
+            UnityWebRequest request = UnityWebRequest.Get(bucketsEndpoint);
+            request.SetRequestHeader("Authorization", "Token " + apiToken);
+            request.SendWebRequest();
+            
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            const float timeout = 10f; // Timeout in seconds
+
+            while (!request.isDone)
+            {
+                if (!(stopwatch.ElapsedMilliseconds > timeout * 1000)) continue;
+                
+                Debug.LogError("EasyLog: InfluxDB connection timeout.");
+                break;
+            }
+            
+            stopwatch.Stop();
+
+            if (!request.isDone) return;
+            
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError("EasyLog: Error fetching buckets: " + request.error);
+            }
+            else
+            {
+                bool bucketExists = CheckIfBucketExists(request.downloadHandler.text);
+                if (bucketExists)
+                {
+                    Debug.Log("EasyLog: Bucket found!");
+                }
+                else
+                {
+                    Debug.LogError($"EasyLog: Bucket \"{bucket}\" not found in org \"{org}\".");
+                }
+            }
+        }
+        
+        private bool CheckIfBucketExists(string jsonResponse)
+        {
+            var json = JSON.Parse(jsonResponse);
+            var bucketsArray = json["buckets"].AsArray;
+
+            foreach (JSONNode bucketNode in bucketsArray)
+            {
+                if (bucketNode["name"].Value == bucket)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

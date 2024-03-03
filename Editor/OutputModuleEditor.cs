@@ -84,14 +84,23 @@ namespace EasyLog.Editor
                 
                 EditorGUILayout.EndHorizontal();
             }
+
+            if (module is not InfluxUploader influxUploader) return;
             
-            if (module is InfluxUploader influxUploader)
-            {
-                influxUploader.url = EditorGUILayout.TextField(new GUIContent("InfluxDB URL", "URL of the InfluxDB"), influxUploader.url);
-                influxUploader.org = EditorGUILayout.TextField(new GUIContent("Organization", "Name of your InfluxDB organization"), influxUploader.org);
-                influxUploader.bucket = EditorGUILayout.TextField(new GUIContent("Bucket", "Name of the target bucket"), influxUploader.bucket);
-                influxUploader.apiToken = EditorGUILayout.TextField(new GUIContent("API Token", "Your InfluxDB API Token"), influxUploader.apiToken);
-            }
+            influxUploader.url = EditorGUILayout.TextField(new GUIContent("InfluxDB URL", "URL of the InfluxDB"), influxUploader.url);
+            influxUploader.apiToken = EditorGUILayout.TextField(new GUIContent("API Token", "Your InfluxDB API Token"), influxUploader.apiToken);
+            influxUploader.org = EditorGUILayout.TextField(new GUIContent("Organization", "Name of your InfluxDB organization"), influxUploader.org);
+            influxUploader.bucket = EditorGUILayout.TextField(new GUIContent("Bucket", "Name of the target bucket"), influxUploader.bucket);
+
+            EditorGUILayout.BeginHorizontal();
+                
+            if (GUILayout.Button("Test Connection"))
+                influxUploader.TestConnection();
+                
+            if (GUILayout.Button("Test Bucket"))
+                influxUploader.TestBucket();
+                
+            EditorGUILayout.EndHorizontal();
         }
     }
 }
