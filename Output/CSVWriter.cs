@@ -19,7 +19,7 @@ namespace EasyLog
 
         public override void OnOutputRequested(string csvData)
         {
-            File.WriteAllText(GetFilePath(), csvData);
+            FileUtility.SaveFile(GetFilePath(), csvData);
         }
 
         public void SetChannelName(string channelName)
@@ -29,7 +29,7 @@ namespace EasyLog
         
         private string GetFilePath()
         {
-            string formattedDateTime = DateTime.Now.ToString("dd-MM-yyyy_HH-mm");
+            string formattedDateTime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string fileName = $"{filePrefix}{formattedDateTime}{fileSuffix}";
             string filePath = Path.Combine(saveLocation, fileName);
             return $"{filePath}{_channelName}.csv";

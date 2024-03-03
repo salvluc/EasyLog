@@ -10,6 +10,8 @@ namespace EasyLog
     [Serializable]
     public class Channel
     {
+        public DataSet DataSet { get; private set; } = new();
+        
         [HideInInspector] public List<TrackedEditorProperty> trackedPropertiesViaEditor = new();
         [HideInInspector] public List<TrackedCodeProperty> trackedPropertiesViaCode = new();
         
@@ -23,19 +25,15 @@ namespace EasyLog
 
         [HideInInspector] public Tracker Tracker;
         [HideInInspector] public int ChannelIndex;
-    
-        public DataSet DataSet { get; private set; } = new();
-        private bool Initialized;
         
         private float DelayBetweenLogs => intervalOption == IntervalOption.Seconds ? logInterval : 1f / logInterval;
         
+        private bool _initialized;
+        
         public IEnumerator InitializeLogging()
         {
-            // wait to ensure all code-based variables are registered
-            //yield return new WaitForSeconds(0.1f);
-            yield return null;
-            //yield return new WaitForEndOfFrame();
-            Initialized = true;
+            yield return null; // wait to ensure all code-based variables are registered
+            _initialized = true;
             Tracker.StartCoroutine(TrackByInterval());
         }
         
@@ -61,7 +59,7 @@ namespace EasyLog
         /// <param name="propertyName">The name the property will be saved under.</param>
         public void StartTrackingProperty(Func<object> propertyAccessor, string propertyName)
         {
-            if (!Initialized)
+            if (!_initialized)
             {
                 Debug.LogWarning("EasyLog: You can not add properties before Start()! Add properties in the Inspector or in Start()!");
                 return;
@@ -89,7 +87,7 @@ namespace EasyLog
         /// <param name="propertyName">The name of the property.</param>
         public void StopTrackingProperty(string propertyName)
         {
-            if (!Initialized)
+            if (!_initialized)
             {
                 Debug.LogWarning("EasyLog: You can not remove properties before Start()! Remove properties in the Inspector or in Start()!");
                 return;
@@ -128,7 +126,7 @@ namespace EasyLog
         /// </summary>
         public void LogAllTrackedProperties()
         {
-            if (!Initialized)
+            if (!_initialized)
             {
                 Debug.LogWarning("EasyLog: You can not log before Start()!");
                 return;
@@ -192,7 +190,7 @@ namespace EasyLog
             return formattedTime;
         }
         
-        private string GetUnixTime() // start date is 01-01-2024
+        private string GetUnixTime() // start date is 01-01-2024 1:00
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
             return ((long)Mathf.Floor((float)timeSpan.TotalSeconds) + 1704067200).ToString();
