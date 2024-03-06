@@ -32,6 +32,20 @@ namespace EasyLog
             return info;
         }
         
+        public static Dictionary<string, string> GetSystemInfoAsFields()
+        {
+            Dictionary<string, string> info = new Dictionary<string, string>
+            {
+                ["operatingSystem"] = "\"" + FileUtility.InfluxFormat(SystemInfo.operatingSystem) + "\"",
+                ["cpu"] = "\"" + FileUtility.InfluxFormat(SystemInfo.processorType) + "(" + SystemInfo.processorCount + "cores)" + "\"",
+                ["ram"] = "\"" + FileUtility.InfluxFormat(SystemInfo.systemMemorySize + "MB") + "\"",
+                ["gpu"] = "\"" + FileUtility.InfluxFormat(SystemInfo.graphicsDeviceName) + "\"",
+                ["vram"] = "\"" + FileUtility.InfluxFormat(SystemInfo.graphicsMemorySize + "MB" + "\"")
+            };
+
+            return info;
+        }
+        
         public static string SerializeTags(Dictionary<string,string> dictionary)
         {
             if (dictionary == null)

@@ -14,8 +14,6 @@ namespace EasyLog
         public string org = "yourOrg";
         public string bucket = "yourBucket";
         public string apiToken = "yourAuthToken";
-
-        public override string RequiredDataType { get; protected set; } = "INFLUX";
     
         private string InfluxDbUrl => $"{url}/api/v2/write?org={org}&bucket={bucket}&precision=ms";
 

@@ -112,11 +112,13 @@ namespace EasyLog.Editor
 
                     if (tracker.ChannelCount > 1)
                     {
+                        //GUI.backgroundColor = StyleKit.RemoveColor;
                         if (GUILayout.Button("Remove Channel"))
                         {
                             tracker.channels.Remove(tracker.GetChannel(i));
                             UpdateChannels(tracker);
                         }
+                        //GUI.backgroundColor = colorCache;
                     }
                 
                     EditorGUILayout.EndVertical();
@@ -150,8 +152,8 @@ namespace EasyLog.Editor
         {
             for (int i = 0; i < tracker.ChannelCount; i++)
             {
-                tracker.GetChannel(i).Tracker = tracker;
-                tracker.GetChannel(i).ChannelIndex = i;
+                tracker.GetChannel(i).tracker = tracker;
+                tracker.GetChannel(i).channelIndex = i;
             }
         }
     }

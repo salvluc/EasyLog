@@ -33,7 +33,7 @@ namespace EasyLog
             Initialize();
         }
 
-        public void OnEnable()
+        private void OnEnable()
         {
             if (trackerMode == TrackerMode.Simple)
             {
@@ -77,17 +77,22 @@ namespace EasyLog
             
             foreach (Channel channel in channels)
             {
-                Debug.Log("CHANNEL LOG: " + channel.ChannelIndex);
-                
                 foreach (var outputModule in outputModules)
                 {
                     if (outputModule is CSVWriter csvWriter)
                     {
-                        csvWriter.OnOutputRequested(channel.DataSet.SerializeForCsv(csvWriter.delimiter, csvWriter.delimiterReplacement), "Channel" + channel.ChannelIndex);
+                        csvWriter.OnOutputRequested(channel.DataSet.SerializeForCsv(csvWriter.delimiter, csvWriter.delimiterReplacement), "Channel" + channel.channelIndex);
                         continue;
                     }
-                    outputModule.OnOutputRequested(channel.DataSet.SerializeForInflux(), "Channel" + channel.ChannelIndex); // needs to be changed when more csv output modules are added
+                    
+                    if (outputModule is SystemInfoWriter && channel.channelIndex != 0) // prevent double system info file
+                        continue;
+                    
+                    outputModule.OnOutputRequested(channel.DataSet.SerializeForInflux(), "Channel" + channel.channelIndex); // needs to be changed when more csv output modules are added
                 }
+                
+                if (trackerMode == TrackerMode.Simple)
+                    break;
             }
         }
 

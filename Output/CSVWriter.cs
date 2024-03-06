@@ -12,8 +12,6 @@ namespace EasyLog
         public string saveLocation = Application.dataPath;
         public char delimiter = ',';
         public char delimiterReplacement = '.';
-        
-        public override string RequiredDataType { get; protected set; } = "CSV";
 
         public override void OnOutputRequested(string csvData, string channelName)
         {
@@ -24,7 +22,7 @@ namespace EasyLog
         {
             string formattedDateTime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string fileName = $"{filePrefix}{formattedDateTime}{fileSuffix}";
-            string filePath = Path.Combine(saveLocation, fileName);
+            string filePath = Path.Combine(useStandardSaveLocation ? StandardSaveLocation : saveLocation, fileName);
             return $"{filePath}_{channelName}.csv";
         }
     }

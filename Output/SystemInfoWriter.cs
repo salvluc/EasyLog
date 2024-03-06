@@ -11,8 +11,6 @@ namespace EasyLog
         public string fileSuffix = "_SystemInfo";
         public string saveLocation = Application.dataPath;
 
-        public override string RequiredDataType { get; protected set; } = "INFLUX";
-
         public override void OnOutputRequested(string influxData, string channelName)
         {
             FileUtility.SaveFile(GetFilePath(), LogUtility.GetSystemInfo());
@@ -22,7 +20,7 @@ namespace EasyLog
         {
             string formattedDateTime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string fileName = $"{filePrefix}{formattedDateTime}{fileSuffix}";
-            string filePath = Path.Combine(saveLocation, fileName);
+            string filePath = Path.Combine(useStandardSaveLocation ? StandardSaveLocation : saveLocation, fileName);
             return $"{filePath}.txt";
         }
     }

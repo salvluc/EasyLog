@@ -16,6 +16,8 @@ namespace EasyLog
         {
             if (float.TryParse(input, out float floatParse))
                 return InfluxFormat(input);
+            if (bool.TryParse(input, out bool boolParse))
+                return InfluxFormat(input);
             
             return "\"" + InfluxFormat(input) + "\"";
         }

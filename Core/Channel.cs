@@ -14,6 +14,8 @@ namespace EasyLog
         
         [HideInInspector] public List<TrackedEditorProperty> trackedPropertiesViaEditor = new();
         [HideInInspector] public List<TrackedCodeProperty> trackedPropertiesViaCode = new();
+
+        [HideInInspector] public string measurementName = "gameMeasurement";
         
         public enum IntervalOption { Seconds, PerSecond }
         [HideInInspector] public IntervalOption intervalOption = IntervalOption.Seconds;
@@ -23,10 +25,10 @@ namespace EasyLog
         
         [HideInInspector] public int logInterval = 1;
 
-        [HideInInspector] public bool logSystemInfo;
+        [HideInInspector] public bool systemInfoAsTags = true;
         
-        [HideInInspector] public Tracker Tracker;
-        [HideInInspector] public int ChannelIndex;
+        [HideInInspector] public Tracker tracker;
+        [HideInInspector] public int channelIndex;
         
         private float DelayBetweenLogs => intervalOption == IntervalOption.Seconds ? logInterval : 1f / logInterval;
         
@@ -36,7 +38,7 @@ namespace EasyLog
         {
             yield return null; // wait to ensure all code-based variables are registered
             _initialized = true;
-            Tracker.StartCoroutine(TrackByInterval());
+            tracker.StartCoroutine(TrackByInterval());
         }
         
         private IEnumerator TrackByInterval()
@@ -118,7 +120,15 @@ namespace EasyLog
         /// <param name="tags">The name of the logged value.</param>
         public void Log(string name, string value, Dictionary<string, string> tags)
         {
-            DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), name, value, AddStandardTags(tags));
+            if (systemInfoAsTags)
+            {
+                foreach (var pair in LogUtility.GetSystemInfoAsTags())
+                {
+                    tags.TryAdd(pair.Key, pair.Value);
+                }
+            }
+            
+            DataPoint newData = new DataPoint(FileUtility.InfluxFormat(measurementName), GetUnixTime(), name, value, AddStandardTags(tags));
             DataSet.Add(newData);
         }
         
@@ -161,7 +171,7 @@ namespace EasyLog
 
                 Dictionary<string, string> newTags = AddStandardTags(new Dictionary<string, string>());
 
-                if (logSystemInfo)
+                if (systemInfoAsTags)
                 {
                     foreach (var pair in LogUtility.GetSystemInfoAsTags())
                     {
@@ -169,7 +179,7 @@ namespace EasyLog
                     }
                 }
                     
-                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedEditorVar.Name, value, newTags);
+                DataPoint newData = new DataPoint(FileUtility.InfluxFormat(measurementName), GetUnixTime(), trackedEditorVar.Name, value, newTags);
                 DataSet.Add(newData);
             }
 
@@ -187,18 +197,26 @@ namespace EasyLog
                 
                 Dictionary<string, string> newTags = AddStandardTags(new Dictionary<string, string>());
                 
-                DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Name, value, newTags);
+                if (systemInfoAsTags)
+                {
+                    foreach (var pair in LogUtility.GetSystemInfoAsTags())
+                    {
+                        newTags.TryAdd(pair.Key, pair.Value);
+                    }
+                }
+                
+                DataPoint newData = new DataPoint(FileUtility.InfluxFormat(measurementName), GetUnixTime(), trackedVar.Name, value, newTags);
                 DataSet.Add(newData);
             }
         }
 
         private Dictionary<string, string> AddStandardTags(Dictionary<string, string> tags)
         {
-            tags["sessionId"] = Tracker.SessionId;
-            tags["logDate"] = DateTime.Now.ToString("yyyy-MM-dd");
-            tags["logTime"] = DateTime.Now.ToString("HH:mm:ss");
-            tags["scaledGameTime"] = GetFormattedTime(TimeScaleOption.Scaled);
-            tags["unscaledGameTime"] = GetFormattedTime(TimeScaleOption.Unscaled);
+            tags["sessionId"] = tracker.SessionId;
+            tags["date"] = DateTime.Now.ToString("yyyy-MM-dd");
+            //tags["logTime"] = DateTime.Now.ToString("HH:mm:ss");s
+            //tags["scaledGameTime"] = GetFormattedTime(TimeScaleOption.Scaled);
+            //tags["unscaledGameTime"] = GetFormattedTime(TimeScaleOption.Unscaled);
             
             return tags;
         }
