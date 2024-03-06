@@ -61,6 +61,10 @@ namespace EasyLog.Editor
                     (int)channel.timeScaleOption,
                     timeOptions.Select(e => e.ToString()).ToArray());
                 channel.timeScaleOption = (Channel.TimeScaleOption)timeOption;
+
+                channel.logSystemInfo = EditorGUILayout.Toggle(new GUIContent("Include System Info",
+                    "If checked, the system info will be saved in the tags of each logged value."),
+                    channel.logSystemInfo);
             }
 
             EditorGUILayout.Space();

@@ -7,6 +7,6 @@ namespace EasyLog
     {
         public abstract string RequiredDataType { get; protected set; }
 
-        public abstract void OnOutputRequested(string output);
+        public abstract void OnOutputRequested(string output, string channelName);
     }
 }

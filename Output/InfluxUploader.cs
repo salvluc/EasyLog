@@ -17,9 +17,9 @@ namespace EasyLog
 
         public override string RequiredDataType { get; protected set; } = "INFLUX";
     
-        private string InfluxDbUrl => $"{url}/api/v2/write?org={org}&bucket={bucket}&precision=s";
+        private string InfluxDbUrl => $"{url}/api/v2/write?org={org}&bucket={bucket}&precision=ms";
 
-        public override void OnOutputRequested(string influxData)
+        public override void OnOutputRequested(string influxData, string channelName)
         {
             byte[] byteData = Encoding.UTF8.GetBytes(influxData);
 

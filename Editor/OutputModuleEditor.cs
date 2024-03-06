@@ -13,12 +13,12 @@ namespace EasyLog.Editor
             {
                 influxWriter.filePrefix = EditorGUILayout.TextField(
                     new GUIContent("File Prefix",
-                        "The prefix of the saved file. The full file name will be:\nPrefix_dd-MM-yyyy_HH-mm_Suffix"),
+                        "The prefix of the saved file. The full file name will be:\n<Prefix>yyyy-MM-dd_HH-mm<Suffix>"),
                     influxWriter.filePrefix);
                 
                 influxWriter.fileSuffix = EditorGUILayout.TextField(
                     new GUIContent("File Suffix",
-                        "The suffix of the saved .csv file. The full file name will be:\nPrefix_dd-MM-yyyy_HH-mm_Suffix"),
+                        "The suffix of the saved .csv file. The full file name will be:\n<Prefix>yyyy-MM-dd_HH-mm<Suffix>"),
                     influxWriter.fileSuffix);
 
                 EditorGUILayout.BeginHorizontal();
@@ -43,12 +43,12 @@ namespace EasyLog.Editor
             {
                 csvWriter.filePrefix = EditorGUILayout.TextField(
                     new GUIContent("File Prefix",
-                        "The prefix of the saved file. The full file name will be:\nPrefix_dd-MM-yyyy_HH-mm_Suffix"),
+                        "The prefix of the saved file. The full file name will be:\n<Prefix>yyyy-MM-dd_HH-mm<Suffix>"),
                     csvWriter.filePrefix);
                 
                 csvWriter.fileSuffix = EditorGUILayout.TextField(
                     new GUIContent("File Suffix",
-                        "The suffix of the saved .csv file. The full file name will be:\nPrefix_dd-MM-yyyy_HH-mm_Suffix"),
+                        "The suffix of the saved .csv file. The full file name will be:\n<Prefix>yyyy-MM-dd_HH-mm<Suffix>"),
                     csvWriter.fileSuffix);
                 
                 string delimiter = EditorGUILayout.TextField(
@@ -80,6 +80,36 @@ namespace EasyLog.Editor
                 {
                     var newSaveLocation = EditorUtility.OpenFolderPanel("Select Save Location", csvWriter.saveLocation, "");
                     csvWriter.saveLocation = newSaveLocation == "" ? csvWriter.saveLocation : newSaveLocation;
+                }
+                
+                EditorGUILayout.EndHorizontal();
+            }
+            
+            if (module is SystemInfoWriter systemInfoWriter)
+            {
+                systemInfoWriter.filePrefix = EditorGUILayout.TextField(
+                    new GUIContent("File Prefix",
+                        "The prefix of the saved file. The full file name will be:\n<Prefix>yyyy-MM-dd_HH-mm<Suffix>"),
+                    systemInfoWriter.filePrefix);
+                
+                systemInfoWriter.fileSuffix = EditorGUILayout.TextField(
+                    new GUIContent("File Suffix",
+                        "The suffix of the saved file. The full file name will be:\n<Prefix>yyyy-MM-dd_HH-mm<Suffix>"),
+                    systemInfoWriter.fileSuffix);
+
+                EditorGUILayout.BeginHorizontal();
+
+                EditorGUILayout.LabelField("Save Location", systemInfoWriter.saveLocation);
+
+                if (GUILayout.Button("Open",GUILayout.Width(45)))
+                {
+                    Application.OpenURL(systemInfoWriter.saveLocation);
+                }
+                
+                if (GUILayout.Button("Change", GUILayout.Width(55)))
+                {
+                    var newSaveLocation = EditorUtility.OpenFolderPanel("Select Save Location", systemInfoWriter.saveLocation, "");
+                    systemInfoWriter.saveLocation = newSaveLocation == "" ? systemInfoWriter.saveLocation : newSaveLocation;
                 }
                 
                 EditorGUILayout.EndHorizontal();

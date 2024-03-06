@@ -88,6 +88,8 @@ namespace EasyLog.Editor
                     tracker.outputModules.Add(new InfluxUploader());
                 if (GUILayout.Button("Add CSV Writer"))
                     tracker.outputModules.Add(new CSVWriter());
+                if (GUILayout.Button("Add System Info Writer"))
+                    tracker.outputModules.Add(new SystemInfoWriter());
                 GUI.backgroundColor = colorCache;
                 
                 EditorGUILayout.EndHorizontal();

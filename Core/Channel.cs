@@ -15,14 +15,16 @@ namespace EasyLog
         [HideInInspector] public List<TrackedEditorProperty> trackedPropertiesViaEditor = new();
         [HideInInspector] public List<TrackedCodeProperty> trackedPropertiesViaCode = new();
         
-        public enum TimeScaleOption { Scaled, Unscaled }
-        [HideInInspector] public TimeScaleOption timeScaleOption = TimeScaleOption.Scaled;
-        
         public enum IntervalOption { Seconds, PerSecond }
         [HideInInspector] public IntervalOption intervalOption = IntervalOption.Seconds;
         
+        public enum TimeScaleOption { Scaled, Unscaled }
+        [HideInInspector] public TimeScaleOption timeScaleOption = TimeScaleOption.Scaled;
+        
         [HideInInspector] public int logInterval = 1;
 
+        [HideInInspector] public bool logSystemInfo;
+        
         [HideInInspector] public Tracker Tracker;
         [HideInInspector] public int ChannelIndex;
         
@@ -116,8 +118,7 @@ namespace EasyLog
         /// <param name="tags">The name of the logged value.</param>
         public void Log(string name, string value, Dictionary<string, string> tags)
         {
-            tags["sessionId"] = Tracker.SessionId;
-            DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), name, value, tags);
+            DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), name, value, AddStandardTags(tags));
             DataSet.Add(newData);
         }
         
@@ -158,7 +159,15 @@ namespace EasyLog
                 else if (fieldInfo != null)
                     value = fieldInfo.GetValue(trackedEditorVar.component).ToString();
 
-                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", Tracker.SessionId} };
+                Dictionary<string, string> newTags = AddStandardTags(new Dictionary<string, string>());
+
+                if (logSystemInfo)
+                {
+                    foreach (var pair in LogUtility.GetSystemInfoAsTags())
+                    {
+                        newTags.TryAdd(pair.Key, pair.Value);
+                    }
+                }
                     
                 DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedEditorVar.Name, value, newTags);
                 DataSet.Add(newData);
@@ -176,24 +185,35 @@ namespace EasyLog
                 
                 string value = trackedVar.Accessor.Invoke().ToString();
                 
-                Dictionary<string, string> newTags = new Dictionary<string, string>() { {"sessionId", Tracker.SessionId} };
+                Dictionary<string, string> newTags = AddStandardTags(new Dictionary<string, string>());
                 
                 DataPoint newData = new DataPoint(Application.productName, GetUnixTime(), trackedVar.Name, value, newTags);
                 DataSet.Add(newData);
             }
         }
-        
-        private string GetFormattedTime()
+
+        private Dictionary<string, string> AddStandardTags(Dictionary<string, string> tags)
         {
-            TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
+            tags["sessionId"] = Tracker.SessionId;
+            tags["logDate"] = DateTime.Now.ToString("yyyy-MM-dd");
+            tags["logTime"] = DateTime.Now.ToString("HH:mm:ss");
+            tags["scaledGameTime"] = GetFormattedTime(TimeScaleOption.Scaled);
+            tags["unscaledGameTime"] = GetFormattedTime(TimeScaleOption.Unscaled);
+            
+            return tags;
+        }
+        
+        private string GetFormattedTime(TimeScaleOption timeScale)
+        {
+            TimeSpan timeSpan = TimeSpan.FromSeconds(timeScale == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
             string formattedTime = $"{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}.{timeSpan.Milliseconds:D}";
             return formattedTime;
         }
         
-        private string GetUnixTime() // start date is 01-01-2024 1:00
+        private string GetUnixTime() // second precision, start date is 01-01-2024 1:00
         {
             TimeSpan timeSpan = TimeSpan.FromSeconds(timeScaleOption == TimeScaleOption.Scaled ? Time.time : Time.unscaledTime);
-            return ((long)Mathf.Floor((float)timeSpan.TotalSeconds) + 1704067200).ToString();
+            return ((long)Mathf.Floor((float)timeSpan.TotalMilliseconds) + 1704067200000).ToString();
         }
     }
 }

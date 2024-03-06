@@ -16,6 +16,8 @@ namespace EasyLog
         
         public enum TrackerMode { Simple, MultiChannel }
         [HideInInspector] public TrackerMode trackerMode = TrackerMode.Simple;
+
+        private bool _outputTriggered;
         
         private void Awake()
         {
@@ -31,7 +33,7 @@ namespace EasyLog
             Initialize();
         }
 
-        public void Start()
+        public void OnEnable()
         {
             if (trackerMode == TrackerMode.Simple)
             {
@@ -43,6 +45,8 @@ namespace EasyLog
             {
                 StartCoroutine(channel.InitializeLogging());
             }
+
+            _outputTriggered = false;
         }
         
         private void Initialize()
@@ -65,21 +69,36 @@ namespace EasyLog
             return channels[ChannelCount-1];
         }
 
-        private void OnApplicationQuit()
+        private void OnTriggerOutput()
         {
-            foreach (var outputModule in outputModules)
+            if (_outputTriggered) return;
+
+            _outputTriggered = true;
+            
+            foreach (Channel channel in channels)
             {
-                foreach (Channel channel in channels)
+                Debug.Log("CHANNEL LOG: " + channel.ChannelIndex);
+                
+                foreach (var outputModule in outputModules)
                 {
                     if (outputModule is CSVWriter csvWriter)
                     {
-                        csvWriter.OnOutputRequested(channel.DataSet.SerializeForCsv(csvWriter.delimiter, csvWriter.delimiterReplacement));
+                        csvWriter.OnOutputRequested(channel.DataSet.SerializeForCsv(csvWriter.delimiter, csvWriter.delimiterReplacement), "Channel" + channel.ChannelIndex);
                         continue;
                     }
-                    
-                    outputModule.OnOutputRequested(channel.DataSet.SerializeForInflux()); // needs to be changed when more csv output modules are added
+                    outputModule.OnOutputRequested(channel.DataSet.SerializeForInflux(), "Channel" + channel.ChannelIndex); // needs to be changed when more csv output modules are added
                 }
             }
+        }
+
+        private void OnApplicationQuit()
+        {
+            OnTriggerOutput();
+        }
+
+        private void OnDisable()
+        {
+            OnTriggerOutput();
         }
     }
 }
