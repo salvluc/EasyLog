@@ -16,6 +16,8 @@ namespace EasyLog
         
         public enum TrackerMode { Simple, MultiChannel }
         [HideInInspector] public TrackerMode trackerMode = TrackerMode.Simple;
+
+        private bool _outputTriggered;
         
         private void Awake()
         {
@@ -31,7 +33,7 @@ namespace EasyLog
             Initialize();
         }
 
-        public void Start()
+        private void OnEnable()
         {
             if (trackerMode == TrackerMode.Simple)
             {
@@ -43,6 +45,8 @@ namespace EasyLog
             {
                 StartCoroutine(channel.InitializeLogging());
             }
+
+            _outputTriggered = false;
         }
         
         private void Initialize()
@@ -65,21 +69,41 @@ namespace EasyLog
             return channels[ChannelCount-1];
         }
 
-        private void OnApplicationQuit()
+        private void OnTriggerOutput()
         {
-            foreach (var outputModule in outputModules)
+            if (_outputTriggered) return;
+
+            _outputTriggered = true;
+            
+            foreach (Channel channel in channels)
             {
-                foreach (Channel channel in channels)
+                foreach (var outputModule in outputModules)
                 {
                     if (outputModule is CSVWriter csvWriter)
                     {
-                        csvWriter.OnOutputRequested(channel.DataSet.SerializeForCsv(csvWriter.delimiter, csvWriter.delimiterReplacement));
+                        csvWriter.OnOutputRequested(channel.DataSet.SerializeForCsv(csvWriter.delimiter, csvWriter.delimiterReplacement), "Channel" + channel.channelIndex);
                         continue;
                     }
                     
-                    outputModule.OnOutputRequested(channel.DataSet.SerializeForInflux()); // needs to be changed when more csv output modules are added
+                    if (outputModule is SystemInfoWriter && channel.channelIndex != 0) // prevent double system info file
+                        continue;
+                    
+                    outputModule.OnOutputRequested(channel.DataSet.SerializeForInflux(), "Channel" + channel.channelIndex); // needs to be changed when more csv output modules are added
                 }
+                
+                if (trackerMode == TrackerMode.Simple)
+                    break;
             }
+        }
+
+        private void OnApplicationQuit()
+        {
+            OnTriggerOutput();
+        }
+
+        private void OnDisable()
+        {
+            OnTriggerOutput();
         }
     }
 }

@@ -23,7 +23,7 @@ namespace EasyLog.Editor
             {
                 _channelFoldoutStates[channel] = EditorGUILayout.Foldout(
                     _channelFoldoutStates[channel],
-                    "Channel " + channel.ChannelIndex,
+                    "Channel " + channel.channelIndex,
                     EditorStyles.foldoutHeader);
                 
                 if (!_channelFoldoutStates[channel])
@@ -39,6 +39,16 @@ namespace EasyLog.Editor
 
             if (_logSettingsFoldoutStates[channel])
             {
+                var measurementName = EditorGUILayout.TextField(
+                    new GUIContent("Measurement Name",
+                        "The name of the logged measurements."),
+                    channel.measurementName);
+
+                if (string.IsNullOrEmpty(measurementName) || measurementName == "_measurement")
+                    channel.measurementName = "gameMeasurement";
+                else
+                    channel.measurementName = FileUtility.InfluxFormat(measurementName);
+                
                 var trackOptions = Enum.GetValues(typeof(Channel.IntervalOption)).Cast<Channel.IntervalOption>().ToArray();
                 int trackMethod = EditorGUILayout.Popup(
                     new GUIContent("Interval Type"),
@@ -61,6 +71,10 @@ namespace EasyLog.Editor
                     (int)channel.timeScaleOption,
                     timeOptions.Select(e => e.ToString()).ToArray());
                 channel.timeScaleOption = (Channel.TimeScaleOption)timeOption;
+
+                channel.systemInfoAsTags = EditorGUILayout.Toggle(new GUIContent("System Info in Tags",
+                    "Whether to include the system info in the tags of each log value."),
+                    channel.systemInfoAsTags);
             }
 
             EditorGUILayout.Space();

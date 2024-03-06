@@ -6,6 +6,22 @@ namespace EasyLog
 {
     public static class FileUtility
     {
+        public static string InfluxFormat(string input)
+        {
+            input = input.Replace(",", ".");
+            return input.Replace(" ", "");
+        }
+        
+        public static string InfluxValueFormat(string input)
+        {
+            if (float.TryParse(input, out float floatParse))
+                return InfluxFormat(input);
+            if (bool.TryParse(input, out bool boolParse))
+                return InfluxFormat(input);
+            
+            return "\"" + InfluxFormat(input) + "\"";
+        }
+        
         public static void SaveFile(string filePath, string data)
         {
             try

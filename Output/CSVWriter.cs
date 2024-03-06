@@ -13,26 +13,17 @@ namespace EasyLog
         public char delimiter = ',';
         public char delimiterReplacement = '.';
 
-        private string _channelName;
-        
-        public override string RequiredDataType { get; protected set; } = "CSV";
-
-        public override void OnOutputRequested(string csvData)
+        public override void OnOutputRequested(string csvData, string channelName)
         {
-            FileUtility.SaveFile(GetFilePath(), csvData);
-        }
-
-        public void SetChannelName(string channelName)
-        {
-            _channelName = channelName;
+            FileUtility.SaveFile(GetFilePath(channelName), csvData);
         }
         
-        private string GetFilePath()
+        private string GetFilePath(string channelName)
         {
             string formattedDateTime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string fileName = $"{filePrefix}{formattedDateTime}{fileSuffix}";
-            string filePath = Path.Combine(saveLocation, fileName);
-            return $"{filePath}{_channelName}.csv";
+            string filePath = Path.Combine(useStandardSaveLocation ? StandardSaveLocation : saveLocation, fileName);
+            return $"{filePath}_{channelName}.csv";
         }
     }
 }

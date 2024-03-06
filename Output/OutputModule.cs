@@ -1,12 +1,15 @@
 using System;
+using UnityEngine;
 
 namespace EasyLog
 {
     [Serializable]
     public abstract class OutputModule
     {
-        public abstract string RequiredDataType { get; protected set; }
+        public bool useStandardSaveLocation;
 
-        public abstract void OnOutputRequested(string output);
+        protected string StandardSaveLocation = Application.dataPath + "/EasyLog";
+
+        public abstract void OnOutputRequested(string output, string channelName);
     }
 }
