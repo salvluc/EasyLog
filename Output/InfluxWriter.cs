@@ -8,7 +8,7 @@ namespace EasyLog
     public class InfluxWriter : OutputModule
     {
         public string filePrefix = "Log_";
-        public string fileSuffix = "_SystemInfo";
+        public string fileSuffix;
         public string saveLocation = Application.dataPath;
 
         public override void OnOutputRequested(string influxData, string channelName)

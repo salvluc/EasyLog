@@ -40,8 +40,11 @@ namespace EasyLog.Editor
                 
                         if (GUILayout.Button("Change", GUILayout.Width(55)))
                         {
-                            var newSaveLocation = EditorUtility.OpenFolderPanel("Select Save Location", influxWriter.saveLocation, "");
-                            influxWriter.saveLocation = newSaveLocation == "" ? influxWriter.saveLocation : newSaveLocation;
+                            EditorApplication.delayCall += () =>
+                            {
+                                var newSaveLocation = EditorUtility.OpenFolderPanel("Select Save Location", influxWriter.saveLocation, "");
+                                influxWriter.saveLocation = newSaveLocation == "" ? influxWriter.saveLocation : newSaveLocation;
+                            };
                         }
                 
                         EditorGUILayout.EndHorizontal();
@@ -94,8 +97,11 @@ namespace EasyLog.Editor
                 
                         if (GUILayout.Button("Change", GUILayout.Width(55)))
                         {
-                            var newSaveLocation = EditorUtility.OpenFolderPanel("Select Save Location", csvWriter.saveLocation, "");
-                            csvWriter.saveLocation = newSaveLocation == "" ? csvWriter.saveLocation : newSaveLocation;
+                            EditorApplication.delayCall += () =>
+                            {
+                                var newSaveLocation = EditorUtility.OpenFolderPanel("Select Save Location", csvWriter.saveLocation, "");
+                                csvWriter.saveLocation = newSaveLocation == "" ? csvWriter.saveLocation : newSaveLocation;
+                            };
                         }
                 
                         EditorGUILayout.EndHorizontal();
@@ -133,8 +139,11 @@ namespace EasyLog.Editor
                 
                         if (GUILayout.Button("Change", GUILayout.Width(55)))
                         {
-                            var newSaveLocation = EditorUtility.OpenFolderPanel("Select Save Location", systemInfoWriter.saveLocation, "");
-                            systemInfoWriter.saveLocation = newSaveLocation == "" ? systemInfoWriter.saveLocation : newSaveLocation;
+                            EditorApplication.delayCall += () =>
+                            {
+                                var newSaveLocation = EditorUtility.OpenFolderPanel("Select Save Location", systemInfoWriter.saveLocation, "");
+                                systemInfoWriter.saveLocation = newSaveLocation == "" ? systemInfoWriter.saveLocation : newSaveLocation;
+                            };
                         }
                 
                         EditorGUILayout.EndHorizontal();

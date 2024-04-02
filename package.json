@@ -1,6 +1,6 @@
 {
   "name": "com.salvluc.easylog",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "displayName": "EasyLog",
   "description": "A tool to easily track, save and analyze play testing data.",
   "unity": "2022.3",

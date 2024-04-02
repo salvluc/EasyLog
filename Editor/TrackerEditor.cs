@@ -75,7 +75,7 @@ namespace EasyLog.Editor
                     }
                     
                     EditorGUILayout.Space(1);
-                    EditorGUILayout.EndVertical(); // BUG: BEGIN MUST BE CALLED FIRST
+                    EditorGUILayout.EndVertical();
                 }
                 EditorGUILayout.Space(2);
                 
