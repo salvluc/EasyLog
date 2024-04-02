@@ -68,7 +68,6 @@ namespace EasyLog
                 Debug.LogWarning("EasyLog: You can not add properties before Start()! Add properties in the Inspector or in Start()!");
                 return;
             }
-            Debug.Log("START TRACKING: " + propertyName);
 
             if (trackedPropertiesViaCode.Any(codeProperty => codeProperty.Name == propertyName || codeProperty.Accessor == propertyAccessor))
             {
@@ -96,8 +95,6 @@ namespace EasyLog
                 Debug.LogWarning("EasyLog: You can not remove properties before Start()! Remove properties in the Inspector or in Start()!");
                 return;
             }
-            
-            Debug.Log("STOP TRACKING: " + propertyName);
             
             if (trackedPropertiesViaCode.All(codeProperty => codeProperty.Name != propertyName))
             {
@@ -154,8 +151,9 @@ namespace EasyLog
                 
                 if (trackedEditorVar.component == null || string.IsNullOrEmpty(trackedEditorVar.propertyName))
                 {
-                    Debug.LogWarning("EasyLog: " + "\"" + trackedEditorVar.propertyName + "\"" + "cannot be found and will be removed from tracker.");
+                    Debug.LogWarning("EasyLog: " + "\"" + trackedEditorVar.propertyName + "\"" + " cannot be found and will be removed from tracker.");
                     trackedPropertiesViaEditor.Remove(trackedEditorVar);
+                    i--;
                     continue;
                 }
                 
@@ -184,17 +182,23 @@ namespace EasyLog
             }
 
             // add values tracked via code
-            foreach (var trackedVar in trackedPropertiesViaCode)
+            for (int i = 0; i < trackedPropertiesViaCode.Count; i++)
             {
-                if (trackedVar.Accessor == null)
+                TrackedCodeProperty trackedCodeVar = trackedPropertiesViaCode[i];
+                string value = "placeholderValue";
+                
+                try
                 {
-                    Debug.LogWarning("EasyLog: " + "\"" + trackedVar.Name + "\"" + "cannot be found and will be removed from tracker.");
-                    trackedPropertiesViaCode.Remove(trackedVar);
+                    value = trackedCodeVar.Accessor.Invoke().ToString();
+                }
+                catch
+                {
+                    Debug.LogWarning("EasyLog: " + "\"" + trackedCodeVar.Name + "\"" + " cannot be found and will be removed from tracker.");
+                    trackedPropertiesViaCode.Remove(trackedCodeVar);
+                    i--;
                     continue;
                 }
-                
-                string value = trackedVar.Accessor.Invoke().ToString();
-                
+
                 Dictionary<string, string> newTags = AddStandardTags(new Dictionary<string, string>());
                 
                 if (systemInfoAsTags)
@@ -205,7 +209,7 @@ namespace EasyLog
                     }
                 }
                 
-                DataPoint newData = new DataPoint(FileUtility.InfluxFormat(measurementName), GetUnixTime(), trackedVar.Name, value, newTags);
+                DataPoint newData = new DataPoint(FileUtility.InfluxFormat(measurementName), GetUnixTime(), trackedCodeVar.Name, value, newTags);
                 DataSet.Add(newData);
             }
         }
